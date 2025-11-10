@@ -42,26 +42,20 @@ const JanjiKoffeePage: React.FC = () => {
                     <h3 className="text-lg font-semibold text-white mb-3 border-b-2 border-stone-600 pb-2">Temukan Kami</h3>
                     <div className="space-y-4">
                         <div>
-                            <h4 className="font-semibold text-stone-100">Janji Koffee Sumpiuh</h4>
+                            <h4 className="font-semibold text-stone-100">Janji Koffee Tambak</h4>
                             <p className="text-sm text-stone-400 mt-1">
-                                Lokasi sama dengan Artea Sumpiuh. Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh.
+                                Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Kec. Tambak, Kabupaten Banyumas, Jawa Tengah 53196
                             </p>
                             <a 
-                                href="https://maps.app.goo.gl/hJdywPBpkNksKMjL7" 
+                                href="https://maps.app.goo.gl/nkPvf7Ahq2vH4jhs7" 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                aria-label="Lihat Janji Koffee Sumpiuh di Google Maps"
+                                aria-label="Lihat Janji Koffee Tambak di Google Maps"
                                 className="inline-block mt-2 text-sky-400 hover:text-sky-300 transition-colors duration-200 text-sm font-semibold"
                             >
                                 <i className="bi bi-geo-alt-fill mr-1" aria-hidden="true"></i>
                                 Lihat di Maps
                             </a>
-                        </div>
-                         <div>
-                            <h4 className="font-semibold text-stone-100">Janji Koffee Purwokerto</h4>
-                            <p className="text-sm text-stone-400 mt-1">
-                                Segera Hadir!
-                            </p>
                         </div>
                     </div>
                 </div>
