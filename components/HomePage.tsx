@@ -160,8 +160,23 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode }) => {
                         </button>
                     </div>
 
-                     {/* AI Recommender Button */}
+                    {/* Drink Quiz Button */}
                     <div className="my-6">
+                        <button
+                            onClick={() => onNavigate('quiz')}
+                            aria-label="Coba Kuis Minuman"
+                            className="group w-full border-2 border-stone-100/80 hover:bg-stone-100/20 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
+                        >
+                            <div className="flex items-center justify-center">
+                                <i className="bi bi-patch-question-fill mr-3 text-xl transition-transform duration-300 group-hover:rotate-12"></i>
+                                <span>Kuis: Temukan Minumanmu</span>
+                            </div>
+                        </button>
+                    </div>
+
+
+                     {/* AI Recommender Button */}
+                    <div className="mb-6">
                         <button
                             onClick={() => onNavigate('recommender')}
                             aria-label="Coba AI Drink Recommender"

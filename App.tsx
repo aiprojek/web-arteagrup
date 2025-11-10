@@ -9,8 +9,9 @@ import Modal from './components/Modal';
 import DrinkRecommender from './components/DrinkRecommender';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import QRCodeModal from './components/QRCodeModal';
+import DrinkQuiz from './components/DrinkQuiz';
 
-export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender';
+export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz';
 
 const App: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Page | null>(null);
@@ -27,6 +28,8 @@ const App: React.FC = () => {
                 return <AboutPage />;
             case 'recommender':
                 return <DrinkRecommender />;
+            case 'quiz':
+                return <DrinkQuiz />;
             default:
                 return null;
         }
