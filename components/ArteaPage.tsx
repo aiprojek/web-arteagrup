@@ -1,4 +1,3 @@
-
 import React from 'react';
 import MenuTabs from './MenuTabs';
 
@@ -72,7 +71,7 @@ const ArteaPage: React.FC = () => {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 aria-label="Lihat Artea Sumpiuh di Google Maps"
-                                className="inline-block mt-2 text-sky-400 hover:text-sky-300 transition-colors duration-200 text-sm font-semibold"
+                                className="inline-block mt-2 text-[var(--accent-color)] hover:opacity-80 transition-opacity duration-200 text-sm font-semibold"
                             >
                                 <i className="bi bi-geo-alt-fill mr-1" aria-hidden="true"></i>
                                 Lihat di Maps
@@ -88,7 +87,7 @@ const ArteaPage: React.FC = () => {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 aria-label="Lihat Artea Karangwangkal di Google Maps"
-                                className="inline-block mt-2 text-sky-400 hover:text-sky-300 transition-colors duration-200 text-sm font-semibold"
+                                className="inline-block mt-2 text-[var(--accent-color)] hover:opacity-80 transition-opacity duration-200 text-sm font-semibold"
                             >
                                 <i className="bi bi-geo-alt-fill mr-1" aria-hidden="true"></i>
                                 Lihat di Maps

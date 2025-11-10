@@ -7,7 +7,7 @@ interface MarkdownRendererProps {
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ text }) => {
     const parseMarkdown = (markdownText: string) => {
         // Bold: **text** or __text__
-        let html = markdownText.replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong class="text-sky-300">$1$2</strong>');
+        let html = markdownText.replace(/\*\*(.*?)\*\*|__(.*?)__/g, '<strong class="text-[var(--accent-color)]">$1$2</strong>');
         // Italic: *text* or _text_
         html = html.replace(/\*(.*?)\*|_(.*?)_/g, '<em>$1$2</em>');
         // Newlines to <br>

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 
 // Define types for quiz
@@ -128,7 +127,7 @@ const DrinkQuiz: React.FC = () => {
 
                     {/* Progress Bar */}
                     <div className="w-full bg-stone-700 rounded-full h-2.5 mb-6">
-                        <div className="bg-sky-400 h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
+                        <div className="bg-[var(--accent-color)] h-2.5 rounded-full transition-all duration-500" style={{ width: `${progress}%` }}></div>
                     </div>
                     
                     <div className={`transition-opacity duration-300 ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
@@ -142,7 +141,7 @@ const DrinkQuiz: React.FC = () => {
                                     onClick={() => handleAnswer(currentQuestion.key, option.value)}
                                     className="group flex items-center justify-center w-full bg-stone-700/50 hover:bg-stone-700 text-stone-200 hover:text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                                 >
-                                    <i className={`${option.icon} mr-3 text-2xl text-sky-400 transition-transform duration-300 group-hover:rotate-[-12deg]`}></i>
+                                    <i className={`${option.icon} mr-3 text-2xl text-[var(--accent-color)] transition-transform duration-300 group-hover:rotate-[-12deg]`}></i>
                                     <span>{option.text}</span>
                                 </button>
                             ))}
@@ -152,7 +151,7 @@ const DrinkQuiz: React.FC = () => {
             ) : (
                 <div className={`flex flex-col items-center justify-center h-full transition-opacity duration-300 ${isFadingOut ? 'opacity-0' : 'opacity-100 animate-fade-in-content'}`}>
                     <p className="text-stone-300 mb-2">Rekomendasi terbaik untukmu adalah...</p>
-                    <div className="w-24 h-24 mb-4 rounded-full bg-sky-400/20 border-2 border-sky-400 flex items-center justify-center text-sky-300 text-5xl">
+                    <div className="w-24 h-24 mb-4 rounded-full bg-[var(--accent-color)]/20 border-2 border-[var(--accent-color)] flex items-center justify-center text-[var(--accent-color)] text-5xl">
                          <i className={result.icon}></i>
                     </div>
                     <h3 className="text-3xl font-bold text-white">{result.drink}</h3>
@@ -163,7 +162,7 @@ const DrinkQuiz: React.FC = () => {
 
                     <button
                         onClick={resetQuiz}
-                        className="w-full max-w-xs bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg"
+                        className="w-full max-w-xs bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg"
                     >
                          <i className="bi bi-arrow-clockwise mr-2"></i>
                          Coba Kuis Lagi

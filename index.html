@@ -32,16 +32,37 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
+      :root {
+        --accent-color: #38bdf8; /* sky-400 */
+        --accent-color-hover: #0ea5e9; /* sky-500 */
+      }
       body {
         font-family: 'Sora', sans-serif;
         background-color: #1a1a1a;
-        background-image: url('https://picsum.photos/seed/artea/1920/1080');
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
       }
     </style>
+     <script>
+      // Immediately-invoked function to apply theme from localStorage before React loads
+      (function() {
+        try {
+          const storedTheme = localStorage.getItem('artea-theme');
+          if (storedTheme) {
+            const theme = JSON.parse(storedTheme);
+            if (theme && theme.accentColor) {
+              document.documentElement.style.setProperty('--accent-color', theme.accentColor);
+              document.documentElement.style.setProperty('--accent-color-hover', theme.accentColorHover);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse or apply theme from localStorage", e);
+        }
+      })();
+    </script>
   <script type="importmap">
 {
   "imports": {

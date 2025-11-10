@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 
 // Define the type for a single menu item
@@ -45,9 +44,9 @@ const MenuTabs: React.FC<MenuTabsProps> = ({ menuData }) => {
                             aria-selected={activeTabId === item.id}
                             aria-controls={`panel-${item.id}`}
                             onClick={() => setActiveTabId(item.id)}
-                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-stone-800 focus:ring-sky-400
+                            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-semibold transition-all duration-300 ease-in-out transform focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-stone-800 focus:ring-[var(--accent-color)]
                                 ${activeTabId === item.id 
-                                    ? 'bg-sky-400 text-stone-900 shadow-lg scale-105' 
+                                    ? 'bg-[var(--accent-color)] text-stone-900 shadow-lg scale-105' 
                                     : 'bg-stone-700/50 hover:bg-stone-700 text-stone-300'
                                 }`}
                         >
@@ -79,7 +78,7 @@ const MenuTabs: React.FC<MenuTabsProps> = ({ menuData }) => {
                     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-stone-300">
                         {activeMenu.variants.map((variant, index) => (
                             <li key={index} className="flex items-center">
-                               <i className="bi bi-circle-fill text-sky-400 mr-3 text-[6px]"></i>
+                               <i className="bi bi-circle-fill text-[var(--accent-color)] mr-3 text-[6px]"></i>
                                <span>{variant}</span>
                             </li>
                         ))}

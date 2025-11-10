@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import MarkdownRenderer from './MarkdownRenderer';
@@ -72,14 +71,14 @@ const DrinkRecommender: React.FC = () => {
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
                     placeholder="Contoh: 'Saya ingin minuman yang segar dan ada rasa buahnya, tapi bukan kopi.'"
-                    className="w-full h-28 p-3 bg-stone-700/50 border-2 border-stone-600 rounded-lg text-stone-200 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-sky-400 focus:border-sky-400 transition-colors"
+                    className="w-full h-28 p-3 bg-stone-700/50 border-2 border-stone-600 rounded-lg text-stone-200 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] transition-colors"
                     aria-label="Describe your craving"
                     disabled={isLoading}
                 />
                 <button
                     onClick={getRecommendation}
                     disabled={isLoading}
-                    className="w-full bg-sky-500 hover:bg-sky-600 disabled:bg-sky-500/50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg"
+                    className="w-full bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 px-4 rounded-lg transition-all duration-300 flex items-center justify-center shadow-lg"
                 >
                     {isLoading ? (
                         <>
@@ -102,7 +101,7 @@ const DrinkRecommender: React.FC = () => {
                 {recommendation && (
                     <div className="mt-6 bg-stone-900/50 p-4 rounded-lg border border-stone-700 animate-fade-in-content">
                         <h3 className="font-semibold text-white mb-2 flex items-center">
-                            <i className="bi bi-robot mr-2 text-sky-400"></i>
+                            <i className="bi bi-robot mr-2 text-[var(--accent-color)]"></i>
                             Rekomendasi dari Barista AI:
                         </h3>
                         <MarkdownRenderer text={recommendation} />

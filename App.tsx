@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import HomePage from './components/HomePage';
 import ArteaPage from './components/ArteaPage';
 import JanjiKoffeePage from './components/JanjiKoffeePage';
@@ -10,13 +9,35 @@ import DrinkRecommender from './components/DrinkRecommender';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import QRCodeModal from './components/QRCodeModal';
 import DrinkQuiz from './components/DrinkQuiz';
+import ThemesPanel, { themes } from './components/ThemesPanel';
+import { Theme } from './types';
 
-export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz';
+
+export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz' | 'themes';
 
 const App: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Page | null>(null);
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+    const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
     const isDesktop = useMediaQuery('(min-width: 768px)');
+
+     useEffect(() => {
+        try {
+            const storedThemeId = localStorage.getItem('artea-theme-id');
+            const savedTheme = themes.find(t => t.id === storedThemeId) || themes[0];
+            handleThemeChange(savedTheme);
+        } catch (e) {
+            console.error("Failed to load theme from localStorage", e);
+            handleThemeChange(themes[0]);
+        }
+    }, []);
+
+    const handleThemeChange = (theme: Theme) => {
+        setCurrentTheme(theme);
+        document.documentElement.style.setProperty('--accent-color', theme.accentColor);
+        document.documentElement.style.setProperty('--accent-color-hover', theme.accentColorHover);
+        localStorage.setItem('artea-theme-id', theme.id);
+    };
 
     const renderPanelContent = () => {
         switch (activePanel) {
@@ -30,6 +51,11 @@ const App: React.FC = () => {
                 return <DrinkRecommender />;
             case 'quiz':
                 return <DrinkQuiz />;
+            case 'themes':
+                return <ThemesPanel 
+                            currentTheme={currentTheme} 
+                            onThemeSelect={handleThemeChange} 
+                        />;
             default:
                 return null;
         }
@@ -40,7 +66,10 @@ const App: React.FC = () => {
     }
 
     return (
-        <div className="relative min-h-screen text-white overflow-x-hidden">
+        <div 
+             className="relative min-h-screen text-white overflow-x-hidden bg-cover bg-center bg-fixed transition-all duration-500 ease-in-out"
+             style={{ backgroundImage: `url('${currentTheme.backgroundImage}')` }}
+        >
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
             {/* Main Content Area */}

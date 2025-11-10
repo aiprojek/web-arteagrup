@@ -14,3 +14,21 @@ export interface SocialLinkItem {
     name: string;
     icon: string;
 }
+
+export interface Theme {
+  id: string;
+  name: string;
+  backgroundImage: string;
+  accentColor: string;
+  accentColorHover: string;
+}
+
+export interface LayoutItem {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  minWidth?: number;
+  minHeight?: number;
+}

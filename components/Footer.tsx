@@ -9,7 +9,7 @@ const Footer: React.FC = () => {
                     href="https://aiprojek01.my.id" 
                     target="_blank" 
                     rel="noopener noreferrer" 
-                    className="hover:text-sky-400 transition-colors"
+                    className="hover:text-[var(--accent-color)] transition-colors"
                 >
                     AI Projek
                 </a>.
