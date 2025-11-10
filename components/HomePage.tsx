@@ -1,22 +1,55 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from './Header';
 import LinkButton from './LinkButton';
 import Footer from './Footer';
 import { LinkItem } from '../types';
 import { Page } from '../App';
 
-interface HomePageProps {
-    onNavigate: (page: Page) => void;
+// Type definition for the BeforeInstallPromptEvent
+interface BeforeInstallPromptEvent extends Event {
+    readonly platforms: Array<string>;
+    readonly userChoice: Promise<{
+        outcome: 'accepted' | 'dismissed',
+        platform: string
+    }>;
+    prompt(): Promise<void>;
 }
 
-const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
-    const [isCopied, setIsCopied] = useState(false);
+interface HomePageProps {
+    onNavigate: (page: Page) => void;
+    onShowQrCode: () => void;
+}
 
-    const infoLinks: LinkItem[] = [
-        { id: 3, url: 'mailto:arteagrup@gmail.com', title: 'Email', icon: 'bi bi-envelope-fill' },
-        { id: 4, url: 'https://wa.me/6281225879494?text=Bismillah', title: 'Whatsapp', icon: 'bi bi-whatsapp' },
-    ];
+const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode }) => {
+    const [isCopied, setIsCopied] = useState(false);
+    const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: Event) => {
+            e.preventDefault();
+            setInstallPromptEvent(e as BeforeInstallPromptEvent);
+        };
+
+        const handleAppInstalled = () => {
+            setInstallPromptEvent(null);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        window.addEventListener('appinstalled', handleAppInstalled);
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+            window.removeEventListener('appinstalled', handleAppInstalled);
+        };
+    }, []);
+
+    const handleInstallClick = () => {
+        if (!installPromptEvent) {
+            return;
+        }
+        installPromptEvent.prompt();
+    };
 
     const handleShareOrCopy = async () => {
         const shareData = {
@@ -43,25 +76,67 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         }
     };
 
+    const infoLinks: LinkItem[] = [
+        { id: 3, url: 'mailto:arteagrup@gmail.com', title: 'Email', icon: 'bi bi-envelope-fill' },
+        { id: 4, url: 'https://wa.me/6281225879494?text=Bismillah', title: 'Whatsapp', icon: 'bi bi-whatsapp' },
+    ];
+
     return (
         <main className="relative z-10 w-full max-w-md mx-auto flex flex-col items-center">
             <div className="relative w-full bg-black/20 backdrop-blur-lg rounded-2xl shadow-2xl p-6 md:p-8">
-                <div className="group absolute top-4 right-4 z-20">
-                     <button
-                        onClick={handleShareOrCopy}
-                        aria-label={isCopied ? "Tautan disalin!" : "Bagikan atau salin halaman"}
-                        className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all duration-300 ease-in-out transform hover:scale-110"
-                    >
-                        {isCopied ? (
-                            <i className="bi bi-check-lg text-xl text-green-400"></i>
-                        ) : (
-                            <i className="bi bi-share-fill text-lg"></i>
-                        )}
-                    </button>
-                    <div className="absolute top-full right-0 mt-2 whitespace-nowrap bg-stone-800 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                       {isCopied ? 'Disalin!' : (navigator.share ? 'Bagikan' : 'Salin Tautan')}
+                
+                {/* QR Code button - Top Left */}
+                <div className="absolute top-4 left-4 z-20">
+                    <div className="group relative">
+                         <button
+                            onClick={onShowQrCode}
+                            aria-label="Tampilkan Kode QR"
+                            className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all duration-300 ease-in-out transform hover:scale-110"
+                        >
+                            <i className="bi bi-qr-code-scan text-lg"></i>
+                        </button>
+                        <div className="absolute top-full left-0 mt-2 whitespace-nowrap bg-stone-800 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                           Kode QR
+                        </div>
                     </div>
                 </div>
+
+                {/* Other action buttons - Top Right */}
+                <div className="absolute top-4 right-4 z-20 flex items-center space-x-2">
+                    
+                    {installPromptEvent && (
+                        <div className="group relative">
+                            <button
+                                onClick={handleInstallClick}
+                                aria-label="Instal Aplikasi"
+                                className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all duration-300 ease-in-out transform hover:scale-110"
+                            >
+                                <i className="bi bi-box-arrow-in-down text-lg"></i>
+                            </button>
+                            <div className="absolute top-full right-0 mt-2 whitespace-nowrap bg-stone-800 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                               Instal Aplikasi
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="group relative">
+                         <button
+                            onClick={handleShareOrCopy}
+                            aria-label={isCopied ? "Tautan disalin!" : "Bagikan atau salin halaman"}
+                            className="flex items-center justify-center w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full text-white/80 hover:text-white transition-all duration-300 ease-in-out transform hover:scale-110"
+                        >
+                            {isCopied ? (
+                                <i className="bi bi-check-lg text-xl text-green-400"></i>
+                            ) : (
+                                <i className="bi bi-share-fill text-lg"></i>
+                            )}
+                        </button>
+                        <div className="absolute top-full right-0 mt-2 whitespace-nowrap bg-stone-800 text-white text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                           {isCopied ? 'Disalin!' : (navigator.share ? 'Bagikan' : 'Salin Tautan')}
+                        </div>
+                    </div>
+                </div>
+
 
                 <Header />
                 <div className="mt-8 w-full">

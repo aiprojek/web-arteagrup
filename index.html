@@ -6,12 +6,14 @@
 
     <!-- Favicon using inline SVG with adaptive colors for light/dark mode -->
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1080 1080'%3E%3Cstyle%3Epath { fill: %2327272a; } @media (prefers-color-scheme: dark) { path { fill: %23ffffff; } }%3C/style%3E%3Cg%3E%3Cpath d='m -573.52986,1480.4556 c -1.46667,-0.3381 -4.01667,-0.9028 -5.66667,-1.2549 -4.27013,-0.9111 -3.71309,-3.9097 1.45919,-7.8548 5.47055,-4.1726 13.07064,-4.4909 19.12239,-0.8009 3.80181,2.3182 8.00706,7.6502 6.85978,8.6978 -0.87121,0.7956 -19.16466,1.8145 -21.77469,1.2128 z'/%3E%3Cpath d='m -573.6383,1493.2194 c -4.56301,-1.3709 -7.80186,-4.4906 -9.10167,-8.7669 -0.84871,-2.7921 -0.67343,-2.8177 14.8423,-2.1625 8.63562,0.3646 15.89976,0.8347 16.1425,1.0447 0.24275,0.2099 -0.18289,1.5481 -0.94585,2.9737 -3.17193,5.9268 -13.19801,9.2362 -20.93728,6.911 z'/%3E%3Cpath d='m -636.2966,1508.3334 c -7.60708,-5.4375 -11.81058,-11.0391 -16.22018,-21.6152 -4.1638,-9.9865 -4.2379,-28.5146 -0.1616,-40.4348 5.0983,-14.9088 15.73045,-32.8596 25.1681,-42.4926 l 3.41658,-3.4873 7.24202,9.2319 c 9.44822,12.0443 13.7053,19.3967 18.76519,32.4093 10.52109,27.0573 4.80243,53.6609 -14.23,66.199 l -7.88004,5.1911 -0.84225,-3.695 c -0.46323,-2.0323 -0.91323,-11.5509 -1,-21.1524 -0.2363,-26.149 -1.75979,-50.7927 -2.9424,-47.5958 -0.55902,1.5112 -1.4497,18.4163 -1.97928,37.567 -0.5296,19.1507 -1.32436,34.7952 -1.76615,34.7655 -0.44179,-0.03 -3.84828,-2.2305 -7.56999,-4.8907 z'/%3E%3Cg transform='scale(2.085) translate(683.9 -1594.7)'%3E%3Cpath d='m-684.19658 1547.6417c-14.5771-5.1961-26.5159-20.784-28.0305-36.5983-0.4091-4.2709-1.0401-10.0997-1.4023-12.9529l-0.6586-5.1875 11.7234 0.6684c9.2345 0.5265 13.2446 1.4392 18.888 4.299 3.9405 1.9968 7.8355 4.1897 8.6556 4.8731 8.3215 6.9348 12.8802 12.8293 15.2613 19.7335 1.9316 5.6006 2.0529 18.341 0.1856 19.495-1.1263 0.6962-9.8854-6.9682-25.2184-22.0663-1.1389-1.1215-4.1213-3.8215-6.6276-6l-4.5569-3.961 4.3631 6.213c2.3998 3.4172 9.9867 11.9008 16.8598 18.8525 11.2899 11.4191 12.2098 12.7163 9.527 13.4355-4.5272 1.2135-14.4947 0.7911-18.9695-0.804z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="manifest" href="/manifest.json">
 
     <!-- SEO Meta Tags -->
     <title>Artea Grup</title>
     <meta name="description" content="Temukan semua link resmi Artea Grup, brand minuman yang menaungi Artea dan Janji Koffee. Lihat menu, lokasi, kontak, dan coba rekomendasi minuman AI kami." />
     <meta name="keywords" content="Artea Grup, Artea, Janji Koffee, linktree, minuman kekinian, es teh, kopi, Banyumas, Purwokerto, Sumpiuh, Tambak" />
     <meta name="author" content="AI Projek" />
+    <meta name="theme-color" content="#27272a" />
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -53,6 +55,17 @@
 </head>
   <body>
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          }, err => {
+            console.log('ServiceWorker registration failed: ', err);
+          });
+        });
+      }
+    </script>
     <script type="module" src="/index.tsx"></script>
   </body>
 </html>

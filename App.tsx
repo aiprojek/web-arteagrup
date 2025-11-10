@@ -8,11 +8,13 @@ import SlideOverPanel from './components/SlideOverPanel';
 import Modal from './components/Modal';
 import DrinkRecommender from './components/DrinkRecommender';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import QRCodeModal from './components/QRCodeModal';
 
 export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender';
 
 const App: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Page | null>(null);
+    const [isQrModalOpen, setIsQrModalOpen] = useState(false);
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
     const renderPanelContent = () => {
@@ -40,7 +42,7 @@ const App: React.FC = () => {
 
             {/* Main Content Area */}
             <main className="min-h-screen w-full flex items-center justify-center p-4">
-                <HomePage onNavigate={setActivePanel} />
+                <HomePage onNavigate={setActivePanel} onShowQrCode={() => setIsQrModalOpen(true)} />
             </main>
 
             {isDesktop ? (
@@ -52,6 +54,8 @@ const App: React.FC = () => {
                     {renderPanelContent()}
                 </SlideOverPanel>
             )}
+
+            <QRCodeModal isOpen={isQrModalOpen} onClose={() => setIsQrModalOpen(false)} />
         </div>
     );
 };
