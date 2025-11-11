@@ -20,7 +20,7 @@ const janjiKoffeeMenu: Menu = [
 
 // The "brain" of our local AI. Maps keywords to potential drinks.
 const keywordMap: Record<string, Drink[]> = {
-    'segar': ['Mojito Strawberry', 'Teh Lemon', 'Teh Leci', 'Lemon Squash', 'Mojito Blue Ocean'],
+    'segar': ['Mojito Strawberry', 'Teh Lemon', 'Teh Leci', 'Lemon Squash', 'Mojito Blue Ocean', 'Blue Ocean'],
     'buah': ['Teh Lemon', 'Teh Leci', 'Teh Markisa', 'Teh Strawberry', 'Mojito Strawberry', 'Mojito Mangga'],
     'kopi': ['Americano', 'Espresso', 'Spanish Latte', 'Kappucino', 'Hazelnut', 'Brown Sugar'],
     'pahit': ['Americano', 'Espresso'],
@@ -31,6 +31,7 @@ const keywordMap: Record<string, Drink[]> = {
     'coklat': ['Choco Malt'],
     'matcha': ['Matcha', 'Matcha Latte', 'Green Tea'],
     'dingin': ['Mojito Strawberry', 'Teh Lemon', 'Lemon Squash'],
+    'unik': ['Blue Ocean',],
     'panas': ['Americano', 'Espresso', 'Kapuccino']
 };
 
