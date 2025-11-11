@@ -67,6 +67,17 @@ const DrinkRecommender: React.FC = () => {
             </div>
 
             <div className="w-full max-w-lg mx-auto space-y-4">
+                 <div className="bg-stone-900/50 p-4 rounded-lg border border-stone-700 text-sm">
+                    <h4 className="font-semibold text-white mb-2 flex items-center">
+                        <i className="bi bi-book-half mr-2 text-[var(--accent-color)]"></i>
+                        Sekilas Pilihan Menu Kami:
+                    </h4>
+                    <ul className="list-disc list-inside text-stone-300 space-y-1">
+                        <li><strong className="text-stone-100">Artea:</strong> Aneka Teh (Original, Buah, Susu), Kopi, Minuman Creamy, dan Mojito segar.</li>
+                        <li><strong className="text-stone-100">Janji Koffee:</strong> Kopi Hitam & Kopi Susu spesial, serta pilihan Non-Kopi yang nikmat.</li>
+                    </ul>
+                </div>
+
                 <textarea
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}

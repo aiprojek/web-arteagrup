@@ -53,8 +53,8 @@ const DiscoveryModal: React.FC<DiscoveryModalProps> = ({ isOpen, onClose, onNavi
                         className="group flex flex-col items-center justify-center w-full bg-stone-700/50 hover:bg-stone-700 text-stone-200 hover:text-white font-semibold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105"
                     >
                         <i className="bi bi-robot text-3xl mb-2 text-[var(--accent-color)]"></i>
-                        <span className="font-bold">Rekomendasi AI</span>
-                        <span className="text-xs text-stone-400">Dapatkan saran dari AI</span>
+                        <span className="font-bold">Barista AI</span>
+                        <span className="text-xs text-stone-400">Dapatkan saran dari Barista AI</span>
                     </button>
                      <button 
                         onClick={() => onNavigate('quiz')}
