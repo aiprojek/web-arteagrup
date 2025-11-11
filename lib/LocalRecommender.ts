@@ -51,6 +51,15 @@ export const getMenuForOutlet = (outlet: 'artea' | 'janji-koffee' | 'semua' | nu
 export const getLocalRecommendation = (prompt: string, availableMenu: Menu): LocalResult => {
     const lowerCasePrompt = prompt.toLowerCase();
 
+    // 1. Check for direct mentions of menu items first
+    for (const drink of availableMenu) {
+        if (lowerCasePrompt.includes(drink.toLowerCase())) {
+            // Found a direct match for a menu item
+            return { drink: drink, keyword: drink };
+        }
+    }
+
+    // 2. If no direct match, check for keywords
     for (const keyword in keywordMap) {
         if (lowerCasePrompt.includes(keyword)) {
             const potentialDrinks = keywordMap[keyword];
