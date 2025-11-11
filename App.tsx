@@ -11,6 +11,7 @@ import QRCodeModal from './components/QRCodeModal';
 import DrinkQuiz from './components/DrinkQuiz';
 import ThemesPanel, { themes } from './components/ThemesPanel';
 import { Theme } from './types';
+import DiscoveryModal from './components/DiscoveryModal';
 
 
 export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz' | 'themes';
@@ -18,6 +19,7 @@ export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz' |
 const App: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Page | null>(null);
     const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+    const [isDiscoveryModalOpen, setIsDiscoveryModalOpen] = useState(false);
     const [currentTheme, setCurrentTheme] = useState<Theme>(themes[0]);
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -38,6 +40,11 @@ const App: React.FC = () => {
         document.documentElement.style.setProperty('--accent-color-hover', theme.accentColorHover);
         localStorage.setItem('artea-theme-id', theme.id);
     };
+
+    const handleNavigate = (page: Page) => {
+        setIsDiscoveryModalOpen(false); // Close discovery modal if open
+        setActivePanel(page);
+    }
 
     const renderPanelContent = () => {
         switch (activePanel) {
@@ -74,7 +81,7 @@ const App: React.FC = () => {
 
             {/* Main Content Area */}
             <main className="min-h-screen w-full flex items-center justify-center p-4">
-                <HomePage onNavigate={setActivePanel} onShowQrCode={() => setIsQrModalOpen(true)} />
+                <HomePage onNavigate={handleNavigate} onShowQrCode={() => setIsQrModalOpen(true)} onShowDiscovery={() => setIsDiscoveryModalOpen(true)} />
             </main>
 
             {isDesktop ? (
@@ -88,6 +95,11 @@ const App: React.FC = () => {
             )}
 
             <QRCodeModal isOpen={isQrModalOpen} onClose={() => setIsQrModalOpen(false)} />
+            <DiscoveryModal 
+                isOpen={isDiscoveryModalOpen} 
+                onClose={() => setIsDiscoveryModalOpen(false)}
+                onNavigate={handleNavigate}
+            />
         </div>
     );
 };

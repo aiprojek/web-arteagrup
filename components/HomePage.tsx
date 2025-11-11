@@ -20,33 +20,32 @@ interface BeforeInstallPromptEvent extends Event {
 interface HomePageProps {
     onNavigate: (page: Page) => void;
     onShowQrCode: () => void;
+    onShowDiscovery: () => void;
 }
 
 const defaultLayouts: Record<string, LayoutItem[]> = {
     standard: [
         { id: 'artea-btn', x: 0, y: 0, width: 100, height: 52, minWidth: 80, minHeight: 40 },
         { id: 'janji-koffee-btn', x: 0, y: 60, width: 100, height: 52, minWidth: 80, minHeight: 40 },
-        { id: 'quiz-btn', x: 0, y: 136, width: 100, height: 60, minWidth: 80, minHeight: 40 },
-        { id: 'ai-btn', x: 0, y: 212, width: 100, height: 60, minWidth: 80, minHeight: 40 },
-        { id: 'info-header', x: 0, y: 288, width: 100, height: 28, minWidth: 80, minHeight: 20 },
-        { id: 'email-btn', x: 0, y: 324, width: 100, height: 52, minWidth: 80, minHeight: 40 },
-        { id: 'whatsapp-btn', x: 0, y: 384, width: 100, height: 52, minWidth: 80, minHeight: 40 },
-        { id: 'about-btn', x: 0, y: 444, width: 100, height: 52, minWidth: 80, minHeight: 40 },
+        { id: 'discovery-btn', x: 0, y: 120, width: 100, height: 52, minWidth: 80, minHeight: 40 },
+        { id: 'info-header', x: 0, y: 188, width: 100, height: 28, minWidth: 80, minHeight: 20 },
+        { id: 'email-btn', x: 0, y: 224, width: 100, height: 52, minWidth: 80, minHeight: 40 },
+        { id: 'whatsapp-btn', x: 0, y: 284, width: 100, height: 52, minWidth: 80, minHeight: 40 },
+        { id: 'about-btn', x: 0, y: 344, width: 100, height: 52, minWidth: 80, minHeight: 40 },
     ],
     compact: [
         { id: 'artea-btn', x: 0, y: 0, width: 48, height: 52 },
         { id: 'janji-koffee-btn', x: 52, y: 0, width: 48, height: 52 },
-        { id: 'quiz-btn', x: 0, y: 60, width: 100, height: 60 },
-        { id: 'ai-btn', x: 0, y: 136, width: 100, height: 60 },
-        { id: 'info-header', x: 0, y: 212, width: 100, height: 28 },
-        { id: 'email-btn', x: 0, y: 248, width: 48, height: 52 },
-        { id: 'whatsapp-btn', x: 52, y: 248, width: 48, height: 52 },
-        { id: 'about-btn', x: 0, y: 308, width: 100, height: 52 },
+        { id: 'discovery-btn', x: 0, y: 60, width: 100, height: 52 },
+        { id: 'info-header', x: 0, y: 128, width: 100, height: 28 },
+        { id: 'email-btn', x: 0, y: 164, width: 48, height: 52 },
+        { id: 'whatsapp-btn', x: 52, y: 164, width: 48, height: 52 },
+        { id: 'about-btn', x: 0, y: 224, width: 100, height: 52 },
     ]
 };
 
 
-const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode }) => {
+const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode, onShowDiscovery }) => {
     const [isCopied, setIsCopied] = useState(false);
     const [installPromptEvent, setInstallPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
     const [isLayoutEditMode, setIsLayoutEditMode] = useState(false);
@@ -142,14 +141,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode }) => {
     ];
     
     const layoutComponentMap: Record<string, React.ReactNode> = {
-        'artea-btn': <button onClick={() => onNavigate('artea')} aria-label="Buka informasi Artea" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-6 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out"><i className="bi bi-cup-straw mr-3 text-xl" aria-hidden="true"></i><span>Artea</span></button>,
-        'janji-koffee-btn': <button onClick={() => onNavigate('janji-koffee')} aria-label="Buka informasi Janji Koffee" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-6 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out"><i className="bi bi-cup-hot-fill mr-3 text-xl" aria-hidden="true"></i><span>Janji Koffee</span></button>,
-        'quiz-btn': <button onClick={() => onNavigate('quiz')} aria-label="Coba Kuis Minuman" className="group w-full h-full border-2 border-stone-100/80 hover:bg-stone-100/20 text-white font-bold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out"><div className="flex items-center justify-center"><i className="bi bi-patch-question-fill mr-3 text-xl"></i><span>Kuis: Temukan Minumanmu</span></div></button>,
-        'ai-btn': <button onClick={() => onNavigate('recommender')} aria-label="Coba AI Drink Recommender" className="group w-full h-full bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold py-4 px-6 rounded-lg shadow-lg transition-all duration-300 ease-in-out"><div className="flex items-center justify-center"><i className="bi bi-stars mr-3 text-xl"></i><span>Temukan Minumanmu (AI)</span></div></button>,
+        'artea-btn': <button onClick={() => onNavigate('artea')} aria-label="Buka informasi Artea" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-4 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out text-sm"><i className="bi bi-cup-straw mr-3 text-xl" aria-hidden="true"></i><span className="whitespace-nowrap">Artea</span></button>,
+        'janji-koffee-btn': <button onClick={() => onNavigate('janji-koffee')} aria-label="Buka informasi Janji Koffee" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-4 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out text-sm"><i className="bi bi-cup-hot-fill mr-3 text-xl" aria-hidden="true"></i><span className="whitespace-nowrap">Janji Koffee</span></button>,
+        'discovery-btn': <button onClick={onShowDiscovery} aria-label="Temukan Minuman Ideal" className="group w-full h-full bg-[var(--accent-color)] hover:bg-[var(--accent-color-hover)] text-white font-bold py-3 px-4 rounded-lg shadow-lg transition-all duration-300 ease-in-out text-sm"><div className="flex items-center justify-center"><i className="bi bi-stars mr-3 text-xl"></i><span className="whitespace-nowrap">Temukan Minuman Ideal</span></div></button>,
         'info-header': <h3 className="text-center text-stone-300 text-sm font-semibold tracking-wider uppercase w-full h-full flex items-center justify-center">Informasi</h3>,
         'email-btn': <LinkButton link={infoLinks[0]} />,
         'whatsapp-btn': <LinkButton link={infoLinks[1]} />,
-        'about-btn': <button onClick={() => onNavigate('about')} aria-label="Buka tentang kami" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-6 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out"><i className="bi bi-info-circle-fill mr-3 text-xl" aria-hidden="true"></i><span>Tentang Kami</span></button>,
+        'about-btn': <button onClick={() => onNavigate('about')} aria-label="Buka tentang kami" className="group flex items-center justify-center w-full h-full bg-stone-100/80 hover:bg-stone-100 text-stone-800 font-semibold py-3 px-4 rounded-lg shadow-lg backdrop-blur-sm transition-all duration-300 ease-in-out text-sm"><i className="bi bi-info-circle-fill mr-3 text-xl" aria-hidden="true"></i><span className="whitespace-nowrap">Tentang Kami</span></button>,
     };
 
     return (
@@ -208,7 +206,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate, onShowQrCode }) => {
 
                 <Header />
                 <div className="mt-8 w-full">
-                    <div className="relative h-[500px]">
+                    <div className="relative h-[440px]">
                         {layout.map((item) => (
                             <DraggableItem
                                 key={item.id}
