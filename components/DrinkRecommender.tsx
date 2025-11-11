@@ -1,5 +1,5 @@
+
 import React, { useState } from 'react';
-import { GoogleGenAI } from '@google/genai';
 import MarkdownRenderer from './MarkdownRenderer';
 import { getLocalRecommendation, getMenuForOutlet, LocalResult } from '../lib/LocalRecommender';
 import { GroundingChunk } from '../types';
@@ -27,7 +27,7 @@ const DrinkRecommender: React.FC = () => {
         setError('');
         setSources([]);
 
-        // 1. Try local AI first. It's now smart enough to handle definitions and recommendations.
+        // 1. Try local AI first.
         const menu = getMenuForOutlet(selectedOutlet);
         const result = getLocalRecommendation(prompt, menu);
         
@@ -37,45 +37,36 @@ const DrinkRecommender: React.FC = () => {
             return;
         }
 
-
-        // 2. Fallback to Gemini for complex queries
+        // 2. Fallback to our secure proxy for complex queries
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
-            
-            const fullPrompt = `
-                You are a friendly and helpful barista for Artea Grup, an Indonesian beverage brand.
-                A user is asking for a drink recommendation or has a question.
-                Their request is: "${prompt}".
-
-                My simple recommendation system couldn't find a direct match.
-                
-                Please use Google Search to:
-                1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?").
-                2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone.
-                3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it as part of your answer.
-                
-                Keep your response concise and engaging. Start with a friendly greeting.
-
-                Our Menu for context:
-                - Artea: Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
-                - Janji Koffee: Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Matcha Latte).
-            `;
-            
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: fullPrompt,
-                config: {
-                    tools: [{ googleSearch: {} }],
+            // Panggil backend proksi kita (Cloudflare Worker)
+            const response = await fetch('/api/recommend', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
+                body: JSON.stringify({ 
+                    prompt: prompt,
+                    outlet: selectedOutlet, 
+                }),
             });
 
-            setGeminiResult(response.text);
-            if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
-                setSources(response.candidates[0].groundingMetadata.groundingChunks);
+            if (!response.ok) {
+                // Tangani error dari server proksi
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            setGeminiResult(data.text);
+            if (data.sources) {
+                setSources(data.sources);
             }
 
         } catch (e) {
             console.error(e);
+            // Pesan error ini sekarang akan muncul jika proksi kita gagal atau Gemini benar-benar down.
             setError('Duh, AI kami sepertinya sedang istirahat. Silakan coba lagi sebentar lagi.');
         } finally {
             setIsLoading(false);
@@ -183,7 +174,7 @@ const DrinkRecommender: React.FC = () => {
                             >
                                 {isLoading ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
