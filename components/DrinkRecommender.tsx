@@ -18,6 +18,12 @@ const DrinkRecommender: React.FC = () => {
         setRecommendation('');
         setError('');
 
+        if (!process.env.API_KEY) {
+            setError('Konfigurasi Kunci API tidak ditemukan. Fitur AI tidak dapat berfungsi di lingkungan hosting ini tanpa Kunci API yang valid.');
+            setIsLoading(false);
+            return;
+        }
+
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 
