@@ -40,13 +40,30 @@ const keywordMap: Record<string, Drink[]> = {
     'panas': ['Americano', 'Espresso', 'Kapuccino']
 };
 
-// New "database" for definitions
+// Expanded "database" for definitions
 const definitionsMap: Record<string, string> = {
     'matcha': 'Matcha adalah teh hijau bubuk dari Jepang yang terkenal dengan rasanya yang khas, sedikit pahit, dan creamy. Beda dari teh hijau biasa, lho! Di Artea, kami punya **Matcha** dan Janji Koffee punya **Matcha Latte**.',
     'americano': 'Americano adalah minuman kopi yang dibuat dengan mencampurkan espresso dengan air panas. Rasanya kuat dan pahit, cocok banget buat yang butuh semangat ekstra tanpa campuran susu.',
     'spanish latte': 'Spanish Latte adalah varian kopi susu yang lebih manis dan creamy karena menggunakan susu kental manis dan krimer. Rasanya lembut, legit, dan tetap ada tendangan kopinya. Ini salah satu andalan di **Janji Koffee**!',
     'mojito': 'Mojito di Artea adalah minuman soda segar non-alkohol dengan rasa buah-buahan seperti strawberry atau leci. Rasanya super nyegerin, apalagi kalau diminum pas cuaca panas!',
-    'espresso': 'Espresso adalah ekstrak kopi murni yang dibuat dengan mesin bertekanan tinggi. Porsinya kecil tapi kafeinnya nendang banget! Ini adalah dasar dari banyak minuman kopi lainnya.'
+    'espresso': 'Espresso adalah ekstrak kopi murni yang dibuat dengan mesin bertekanan tinggi. Porsinya kecil tapi kafeinnya nendang banget! Ini adalah dasar dari banyak minuman kopi lainnya.',
+    'teh original': 'Teh Original kami adalah racikan teh klasik yang disajikan sesuai seleramu, bisa tawar atau manis. Cocok buat kamu yang suka rasa teh otentik.',
+    'teh lemon': 'Perpaduan teh khas kami dengan rasa lemon yang super segar. Pilihan tepat untuk melepas dahaga di siang hari!',
+    'teh leci': 'Manisnya buah leci bertemu dengan teh pilihan, menciptakan rasa manis-segar yang bikin nagih. Salah satu favorit di Artea!',
+    'milk tea': 'Minuman klasik yang disukai semua orang! Teh susu racikan Artea ini punya rasa yang creamy dan seimbang, pas banget buat teman santai.',
+    'green tea': 'Nikmati rasa teh hijau yang ringan. Tersedia juga varian **Green Tea Milk** yang lebih creamy.',
+    'spesial mix': 'Ini racikan kopi spesial dari kami! Perpaduan kopi, susu, dan bahan spesial lainnya yang menciptakan rasa unik yang wajib kamu coba.',
+    'hazelnut': 'Kopi dengan sentuhan sirup hazelnut yang gurih dan wangi. Rasanya mewah dan nyaman banget di lidah.',
+    'brown sugar': 'Kopi kekinian dengan manisnya gula aren. Rasa manisnya legit dan punya aroma khas yang menggoda.',
+    'tiramisu': 'Terinspirasi dari dessert khas Italia, minuman ini punya rasa kopi, keju, dan coklat yang menyatu. Creamy dan nikmat!',
+    'vanilla': 'Kopi susu dengan aroma vanilla yang lembut dan menenangkan. Pilihan aman buat kamu yang suka kopi dengan sentuhan manis.',
+    'kappucino': 'Kopi yang terisnpirasi dari kopi klasik Italia dengan komposisi yang dimodifikasi yaitu antara espresso, krimer, dan foam. Rasanya bold tapi tetap smooth.',
+    'taro': 'Minuman non-kopi dengan rasa talas ungu yang manis, creamy, dan sedikit gurih. Warnanya cantik, rasanya pun enak!',
+    'red velvet': 'Rasa kue red velvet dalam bentuk minuman! Perpaduan rasa coklat dan hint rasa keju yang creamy. Manis dan memanjakan.',
+    'butterscotch': 'Kopi dengan sirup butterscotch yang punya rasa manis karamel dan sedikit sentuhan butter. Unik dan bikin penasaran!',
+    'choco malt': 'Minuman coklat klasik dengan tambahan malt yang memberikan rasa gurih dan khas. Cocok buat segala usia!',
+    'lemon squash': 'Kesegaran maksimal dari lemon dan soda. Pilihan non-kopi yang super menyegarkan dan bikin melek!',
+    'blue ocean': 'Minuman soda dengan sirup Blue Curaçao dan sentuhan rasa jeruk. Warnanya biru cantik seperti lautan dan rasanya segar tropis!'
 };
 
 
@@ -72,15 +89,15 @@ export const getLocalRecommendation = (prompt: string, availableMenu: Menu): Loc
     const lowerCasePrompt = prompt.toLowerCase();
 
     // Priority 1: Handle definition/informational queries.
-    const informationalKeywords = ['apa itu', 'jelaskan', 'pengertian dari', 'definisi dari'];
+    const informationalKeywords = ['apa itu', 'jelaskan', 'pengertian dari', 'definisi dari', 'apa sih'];
     for (const keyword of informationalKeywords) {
-        if (lowerCasePrompt.startsWith(keyword)) {
-            const topic = lowerCasePrompt.replace(keyword, '').trim();
-            for (const defKey in definitionsMap) {
-                if (topic.includes(defKey)) {
-                    const title = defKey.charAt(0).toUpperCase() + defKey.slice(1);
-                    return { type: 'definition', title: `Tentang ${title}`, content: definitionsMap[defKey] };
-                }
+        if (lowerCasePrompt.includes(keyword)) {
+            const topic = lowerCasePrompt.replace(keyword, '').trim().replace('?','');
+            // Find the best match from definition keys
+            const defKey = Object.keys(definitionsMap).find(key => topic.includes(key));
+            if (defKey) {
+                 const title = defKey.charAt(0).toUpperCase() + defKey.slice(1);
+                 return { type: 'definition', title: `Tentang ${title}`, content: definitionsMap[defKey] };
             }
         }
     }
