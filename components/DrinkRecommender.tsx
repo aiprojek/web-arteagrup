@@ -25,29 +25,38 @@ const DrinkRecommender: React.FC = () => {
         setError('');
         setSources([]);
 
-        // New Logic: Detect if the query is informational and should skip the local recommender.
-        const informationalKeywords = [
-            'apa itu', 'jelaskan', 'pengertian', 'definisi', 'apa bedanya', 
-            'rekomendasi hari ini', 'minuman hari ini', 'paling populer', 'terlaris'
-        ];
-        const lowerCasePrompt = prompt.toLowerCase();
-        const isInformationalQuery = informationalKeywords.some(keyword => lowerCasePrompt.includes(keyword));
-
-        let localResult = null;
-        if (!isInformationalQuery) {
-            // 1. Try local AI first ONLY for recommendation queries
-            const menu = getMenuForOutlet(selectedOutlet);
-            localResult = getLocalRecommendation(prompt, menu);
-        }
+        // 1. Try local AI first. It's now smart enough to handle simple informational queries.
+        const menu = getMenuForOutlet(selectedOutlet);
+        const localResult = getLocalRecommendation(prompt, menu);
         
         if (localResult) {
-            const response = `Tentu! Untuk kamu yang lagi cari minuman **${localResult.keyword}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
+            let response = '';
+            // Generate a custom response based on the type of recommendation
+            switch (localResult.keyword) {
+                case 'Rekomendasi Hari Ini':
+                    response = `Tentu! **Rekomendasi Hari Ini** dari Barista AI jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
+                    break;
+                case 'Minuman Terlaris':
+                     response = `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, kamu wajib coba!`;
+                    break;
+                default:
+                    // If the keyword is a menu item itself (direct match)
+                    if (localResult.keyword.toLowerCase() === localResult.drink.toLowerCase()) {
+                         response = `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kamu pasti suka.`;
+                    } else {
+                        // Standard flavor-based recommendation
+                         response = `Tentu! Untuk kamu yang lagi cari minuman **${localResult.keyword}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
+                    }
+                    break;
+            }
+
             setRecommendation(response);
             setIsLoading(false);
             return;
         }
 
-        // 2. Fallback to Gemini (now also handles informational queries directly)
+
+        // 2. Fallback to Gemini for complex queries
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             
@@ -56,11 +65,11 @@ const DrinkRecommender: React.FC = () => {
                 A user is asking for a drink recommendation or has a question.
                 Their request is: "${prompt}".
 
-                My simple recommendation system couldn't find a direct match, or the user is asking a general question.
+                My simple recommendation system couldn't find a direct match.
                 
                 Please use Google Search to:
-                1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?", "what is your recommendation for today?").
-                2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone. Be creative if they ask for a "drink of the day".
+                1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?").
+                2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone.
                 3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it as part of your answer.
                 
                 Keep your response concise and engaging. Start with a friendly greeting.
@@ -175,7 +184,7 @@ const DrinkRecommender: React.FC = () => {
                                     <>
                                         <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 * 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
                                         Mencarikan...
                                     </>

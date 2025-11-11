@@ -35,6 +35,11 @@ const keywordMap: Record<string, Drink[]> = {
     'panas': ['Americano', 'Espresso', 'Kapuccino']
 };
 
+// New definitions for special queries
+const todayRecommendationPool: Menu = ['Mojito Strawberry', 'Spanish Latte', 'Matcha', 'Teh Leci', 'Butterscotch', 'Spesial Mix', 'Blue Ocean'];
+const popularDrinks: Menu = ['Milk Tea', 'Americano', 'Spanish Latte', 'Brown Sugar', 'Spesial mix', 'Blue Ocean', 'Teh Lemon'];
+
+
 export const getMenuForOutlet = (outlet: 'artea' | 'janji-koffee' | 'semua' | null): Menu => {
     switch (outlet) {
         case 'artea':
@@ -51,14 +56,35 @@ export const getMenuForOutlet = (outlet: 'artea' | 'janji-koffee' | 'semua' | nu
 export const getLocalRecommendation = (prompt: string, availableMenu: Menu): LocalResult => {
     const lowerCasePrompt = prompt.toLowerCase();
 
-    // Priority 1: Check for direct mentions of menu items.
+    // Priority 1: Handle special informational queries that can be answered locally.
+    const todayKeywords = ['rekomendasi hari ini', 'minuman hari ini', 'minuman buat hari ini'];
+    if (todayKeywords.some(keyword => lowerCasePrompt.includes(keyword))) {
+        // Filter pool by what's available in the current menu context
+        const availablePool = todayRecommendationPool.filter(drink => availableMenu.includes(drink));
+        if (availablePool.length > 0) {
+            const randomDrink = availablePool[Math.floor(Math.random() * availablePool.length)];
+            return { drink: randomDrink, keyword: 'Rekomendasi Hari Ini' };
+        }
+    }
+
+    const popularKeywords = ['paling populer', 'terlaris', 'best seller', 'paling laku'];
+    if (popularKeywords.some(keyword => lowerCasePrompt.includes(keyword))) {
+        // Find the first popular drink that is available on the menu
+        const popularChoice = popularDrinks.find(drink => availableMenu.includes(drink));
+        if (popularChoice) {
+            return { drink: popularChoice, keyword: 'Minuman Terlaris' };
+        }
+    }
+
+
+    // Priority 2: Check for direct mentions of menu items.
     for (const drink of availableMenu) {
         if (lowerCasePrompt.includes(drink.toLowerCase())) {
             return { drink: drink, keyword: drink };
         }
     }
 
-    // Priority 2: Use a scoring system for keywords.
+    // Priority 3: Use a scoring system for flavor keywords.
     const foundKeywords = Object.keys(keywordMap).filter(keyword => lowerCasePrompt.includes(keyword));
 
     if (foundKeywords.length === 0) {
@@ -79,11 +105,11 @@ export const getLocalRecommendation = (prompt: string, availableMenu: Menu): Loc
         });
     });
 
-    let bestMatch = { drink: '', score: 0, keyword: '' };
+    let bestMatch = { drink: '', score: 0 };
 
     for (const drink in drinkScores) {
         if (drinkScores[drink] > bestMatch.score) {
-            bestMatch = { drink: drink, score: drinkScores[drink], keyword: '' };
+            bestMatch = { drink: drink, score: drinkScores[drink] };
         }
     }
     
