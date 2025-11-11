@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import MarkdownRenderer from './MarkdownRenderer';
-import { getLocalRecommendation, getMenuForOutlet } from '../lib/LocalRecommender';
+import { getLocalRecommendation, getMenuForOutlet, LocalResult } from '../lib/LocalRecommender';
 import { GroundingChunk } from '../types';
 
 type Outlet = 'artea' | 'janji-koffee' | 'semua';
@@ -9,7 +9,8 @@ type Outlet = 'artea' | 'janji-koffee' | 'semua';
 const DrinkRecommender: React.FC = () => {
     const [selectedOutlet, setSelectedOutlet] = useState<Outlet | null>(null);
     const [prompt, setPrompt] = useState('');
-    const [recommendation, setRecommendation] = useState('');
+    const [localResult, setLocalResult] = useState<LocalResult>(null);
+    const [geminiResult, setGeminiResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [sources, setSources] = useState<GroundingChunk[]>([]);
@@ -21,36 +22,17 @@ const DrinkRecommender: React.FC = () => {
         }
 
         setIsLoading(true);
-        setRecommendation('');
+        setLocalResult(null);
+        setGeminiResult('');
         setError('');
         setSources([]);
 
-        // 1. Try local AI first. It's now smart enough to handle simple informational queries.
+        // 1. Try local AI first. It's now smart enough to handle definitions and recommendations.
         const menu = getMenuForOutlet(selectedOutlet);
-        const localResult = getLocalRecommendation(prompt, menu);
+        const result = getLocalRecommendation(prompt, menu);
         
-        if (localResult) {
-            let response = '';
-            // Generate a custom response based on the type of recommendation
-            switch (localResult.keyword) {
-                case 'Rekomendasi Hari Ini':
-                    response = `Tentu! **Rekomendasi Hari Ini** dari Barista AI jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
-                    break;
-                case 'Minuman Terlaris':
-                     response = `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, kamu wajib coba!`;
-                    break;
-                default:
-                    // If the keyword is a menu item itself (direct match)
-                    if (localResult.keyword.toLowerCase() === localResult.drink.toLowerCase()) {
-                         response = `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kamu pasti suka.`;
-                    } else {
-                        // Standard flavor-based recommendation
-                         response = `Tentu! Untuk kamu yang lagi cari minuman **${localResult.keyword}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
-                    }
-                    break;
-            }
-
-            setRecommendation(response);
+        if (result) {
+            setLocalResult(result);
             setIsLoading(false);
             return;
         }
@@ -87,7 +69,7 @@ const DrinkRecommender: React.FC = () => {
                 },
             });
 
-            setRecommendation(response.text);
+            setGeminiResult(response.text);
             if (response.candidates?.[0]?.groundingMetadata?.groundingChunks) {
                 setSources(response.candidates[0].groundingMetadata.groundingChunks);
             }
@@ -102,7 +84,8 @@ const DrinkRecommender: React.FC = () => {
     
     const handleReset = () => {
         setPrompt('');
-        setRecommendation('');
+        setLocalResult(null);
+        setGeminiResult('');
         setError('');
         setSources([]);
     }
@@ -110,6 +93,24 @@ const DrinkRecommender: React.FC = () => {
     const handleOutletChange = () => {
         setSelectedOutlet(null);
         handleReset();
+    }
+    
+    // Helper function to render recommendation text from local result
+    const renderLocalRecommendationText = () => {
+        if (!localResult || localResult.type !== 'recommendation') return null;
+
+        switch (localResult.reason) {
+            case 'Rekomendasi Hari Ini':
+                return `Tentu! **Rekomendasi Hari Ini** dari Barista AI jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
+            case 'Minuman Terlaris':
+                return `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, kamu wajib coba!`;
+            default:
+                if (localResult.reason.toLowerCase() === localResult.drink.toLowerCase()) {
+                    return `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kamu pasti suka.`;
+                } else {
+                    return `Tentu! Untuk kamu yang lagi cari minuman **${localResult.reason}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
+                }
+        }
     }
 
 
@@ -182,7 +183,7 @@ const DrinkRecommender: React.FC = () => {
                             >
                                 {isLoading ? (
                                     <>
-                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                         </svg>
@@ -201,15 +202,18 @@ const DrinkRecommender: React.FC = () => {
                 
                 {error && <p className="text-red-400 text-center mt-4">{error}</p>}
                 
-                {recommendation && (
+                {(localResult || geminiResult) && (
                     <div className="mt-6 bg-stone-900/50 p-4 rounded-lg border border-stone-700 animate-fade-in-content">
                         <h3 className="font-semibold text-white mb-2 flex items-center">
                             <i className="bi bi-robot mr-2 text-[var(--accent-color)]"></i>
-                            Rekomendasi dari Barista AI:
+                            {localResult?.type === 'definition' ? 'Info Cepat dari Barista AI:' : 'Rekomendasi dari Barista AI:'}
                         </h3>
-                        <MarkdownRenderer text={recommendation} />
+                        {localResult?.type === 'recommendation' && <MarkdownRenderer text={renderLocalRecommendationText() || ''} />}
+                        {localResult?.type === 'definition' && <MarkdownRenderer text={localResult.content} />}
+                        {geminiResult && <MarkdownRenderer text={geminiResult} />}
                     </div>
                 )}
+
 
                 {sources.length > 0 && (
                     <div className="mt-4 bg-stone-900/50 p-4 rounded-lg border border-stone-700 animate-fade-in-content">
@@ -218,7 +222,6 @@ const DrinkRecommender: React.FC = () => {
                             Sumber Informasi:
                         </h4>
                         <ul className="space-y-1">
-                            {/* FIX: Check for source.web.uri as it's optional, to prevent rendering anchor tags without an href. */}
                             {sources.map((source, index) => source.web?.uri ? (
                                 <li key={index}>
                                     <a 
