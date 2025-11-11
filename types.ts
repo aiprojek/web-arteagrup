@@ -32,3 +32,12 @@ export interface LayoutItem {
   minWidth?: number;
   minHeight?: number;
 }
+
+export interface WebSource {
+  uri?: string;
+  title?: string;
+}
+
+export interface GroundingChunk {
+  web?: WebSource;
+}
