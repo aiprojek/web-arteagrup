@@ -25,10 +25,21 @@ const DrinkRecommender: React.FC = () => {
         setError('');
         setSources([]);
 
-        // 1. Try local AI first
-        const menu = getMenuForOutlet(selectedOutlet);
-        const localResult = getLocalRecommendation(prompt, menu);
+        // New Logic: Detect if the query is informational and should skip the local recommender.
+        const informationalKeywords = [
+            'apa itu', 'jelaskan', 'pengertian', 'definisi', 'apa bedanya', 
+            'rekomendasi hari ini', 'minuman hari ini', 'paling populer', 'terlaris'
+        ];
+        const lowerCasePrompt = prompt.toLowerCase();
+        const isInformationalQuery = informationalKeywords.some(keyword => lowerCasePrompt.includes(keyword));
 
+        let localResult = null;
+        if (!isInformationalQuery) {
+            // 1. Try local AI first ONLY for recommendation queries
+            const menu = getMenuForOutlet(selectedOutlet);
+            localResult = getLocalRecommendation(prompt, menu);
+        }
+        
         if (localResult) {
             const response = `Tentu! Untuk kamu yang lagi cari minuman **${localResult.keyword}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
             setRecommendation(response);
@@ -36,7 +47,7 @@ const DrinkRecommender: React.FC = () => {
             return;
         }
 
-        // 2. Fallback to Gemini with Google Search
+        // 2. Fallback to Gemini (now also handles informational queries directly)
         try {
             const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
             
@@ -45,12 +56,12 @@ const DrinkRecommender: React.FC = () => {
                 A user is asking for a drink recommendation or has a question.
                 Their request is: "${prompt}".
 
-                My simple recommendation system couldn't find a direct match from our menu.
+                My simple recommendation system couldn't find a direct match, or the user is asking a general question.
                 
                 Please use Google Search to:
-                1. Understand their query better if it's a general question (e.g., "what is matcha?", "difference between latte and cappuccino").
-                2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone.
-                3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it.
+                1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?", "what is your recommendation for today?").
+                2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone. Be creative if they ask for a "drink of the day".
+                3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it as part of your answer.
                 
                 Keep your response concise and engaging. Start with a friendly greeting.
 
