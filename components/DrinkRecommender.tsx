@@ -183,7 +183,7 @@ const DrinkRecommender: React.FC = () => {
                                 ) : (
                                     <>
                                         <i className="bi bi-magic mr-2"></i>
-                                        Beri Rekomendasi
+                                        Tanya Barista
                                     </>
                                 )}
                             </button>
