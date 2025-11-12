@@ -24,28 +24,28 @@ export const themes: Theme[] = [
     { 
         id: 'coffee', 
         name: 'Warm Coffee', 
-        backgroundImage: 'https://images.unsplash.com/photo-1511920183353-309c279ab4a3?w=1920&q=80&fit=max',
+        backgroundImage: 'https://cdn.pixabay.com/photo/2023/11/22/18/41/coffee-8406187_960_720.jpg',
         accentColor: '#f59e0b', // amber-500
         accentColorHover: '#d97706' // amber-600
     },
     { 
         id: 'dusk', 
         name: 'Senja Ungu', 
-        backgroundImage: 'https://images.unsplash.com/photo-1523731174309-98c42c75a344?w=1920&q=80&fit=max',
+        backgroundImage: 'https://cdn.pixabay.com/photo/2017/08/10/03/12/purple-2617579_960_720.jpg',
         accentColor: '#c084fc', // purple-400
         accentColorHover: '#a855f7' // purple-500
     },
      { 
         id: 'sunset', 
         name: 'Matahari Terbenam', 
-        backgroundImage: 'https://images.unsplash.com/photo-1502867899-39147a544722?w=1920&q=80&fit=max',
+        backgroundImage: 'https://cdn.pixabay.com/photo/2016/11/29/04/19/ocean-1867285_1280.jpg',
         accentColor: '#fb923c', // orange-400
         accentColorHover: '#f97316' // orange-500
     },
     { 
         id: 'mono', 
         name: 'Hitam Putih', 
-        backgroundImage: 'https://images.unsplash.com/photo-1434725039720-aaad6dd32dfe?w=1920&q=80&fit=max',
+        backgroundImage: 'https://cdn.pixabay.com/photo/2023/04/11/00/58/desert-7915031_640.jpg',
         accentColor: '#a1a1aa', // stone-400
         accentColorHover: '#71717a' // stone-500
     },
@@ -60,11 +60,16 @@ const ThemesPanel: React.FC<ThemesPanelProps> = ({ currentTheme, onThemeSelect }
      */
     const getThumbnailUrl = (fullUrl: string): string => {
         try {
-            const url = new URL(fullUrl);
-            // Set a smaller width for the thumbnail and adjust quality for performance.
-            url.searchParams.set('w', '400');
-            url.searchParams.set('q', '75');
-            return url.toString();
+            // Check if it's an Unsplash URL to apply optimizations
+            if (fullUrl.includes('images.unsplash.com')) {
+                const url = new URL(fullUrl);
+                // Set a smaller width for the thumbnail and adjust quality for performance.
+                url.searchParams.set('w', '400');
+                url.searchParams.set('q', '75');
+                return url.toString();
+            }
+            // For other URLs (like Pixabay), return as is, or you could implement specific logic.
+            return fullUrl;
         } catch (e) {
             console.error("Failed to parse theme URL for thumbnail:", e);
             // Fallback to the original URL on any parsing error
