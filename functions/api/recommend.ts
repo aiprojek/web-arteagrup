@@ -69,8 +69,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
         *   **Janji Koffee Tambak:** Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Kec. Tambak, Kabupaten Banyumas, Jawa Tengah 53196
 
         **Menu for context:**
-        *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
-        *   **Janji Koffee:** Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Creamy Matcha, Creamy Green Tea).
+        *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut, Brown Sugar, Spesial Mix, Tiramisu, Vanilla, Kappucino), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
+        *   **Janji Koffee:** Kopi Hitam (Americano, Long Black, Espresso), Kopi Series (Spanish Latte, Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar), Non Kopi (Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean).
         ---
     `;
 

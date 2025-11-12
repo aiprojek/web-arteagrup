@@ -18,8 +18,8 @@ const arteaMenu: Menu = [
 ];
 
 const janjiKoffeeMenu: Menu = [
-    'Americano', 'Espresso', 'Spanish Latte', 'Butterscotch', 'Spesial Mix',
-    'Kapuccino', 'Vanilla', 'Tiramisu', 'Hazelnut', 'Brown Sugar', 'Choco Malt',
+    'Americano', 'Long Black', 'Espresso', 'Spanish Latte', 'Butterscotch', 'Spesial Mix',
+    'Kappucino', 'Vanilla', 'Tiramisu', 'Hazelnut', 'Brown Sugar', 'Choco Malt',
     'Creamy Matcha', 'Creamy Green Tea', 'Lemon Squash', 'Blue Ocean'
 ];
 
@@ -27,8 +27,8 @@ const janjiKoffeeMenu: Menu = [
 const keywordMap: Record<string, Drink[]> = {
     'segar': ['Mojito Strawberry', 'Teh Lemon', 'Teh Leci', 'Lemon Squash', 'Mojito Blue Ocean', 'Blue Ocean'],
     'buah': ['Teh Lemon', 'Teh Leci', 'Teh Markisa', 'Teh Strawberry', 'Mojito Strawberry', 'Mojito Mangga'],
-    'kopi': ['Americano', 'Espresso', 'Spanish Latte', 'Kappucino', 'Hazelnut', 'Brown Sugar', 'Spesial Mix', 'Tiramisu', 'Vanilla', 'Kapuccino'],
-    'pahit': ['Americano', 'Espresso'],
+    'kopi': ['Americano', 'Espresso', 'Long Black', 'Spanish Latte', 'Kappucino', 'Hazelnut', 'Brown Sugar', 'Spesial Mix', 'Tiramisu', 'Vanilla'],
+    'pahit': ['Americano', 'Espresso', 'Long Black'],
     'susu': ['Milk Tea', 'Spanish Latte', 'Butterscotch', 'Creamy Matcha', 'Creamy Green Tea'],
     'creamy': ['Taro', 'Red Velvet', 'Strawberry', 'Mangga', 'Milk Tea', 'Spanish Latte', 'Creamy Matcha'],
     'manis': ['Brown Sugar', 'Taro', 'Red Velvet', 'Teh Leci', 'Butterscotch', 'Spanish Latte', 'Milk Tea'],
@@ -37,13 +37,14 @@ const keywordMap: Record<string, Drink[]> = {
     'matcha': ['Matcha', 'Creamy Matcha', 'Green Tea', 'Green Tea Milk'],
     'dingin': ['Mojito Strawberry', 'Teh Lemon', 'Lemon Squash'],
     'unik': ['Blue Ocean', 'Taro', 'Butterscotch'],
-    'panas': ['Americano', 'Espresso', 'Kapuccino']
+    'panas': ['Americano', 'Espresso', 'Kappucino', 'Long Black']
 };
 
 // Expanded "database" for definitions
 const definitionsMap: Record<string, string> = {
     'matcha': 'Matcha adalah teh hijau bubuk dari Jepang yang terkenal dengan rasanya yang khas, sedikit pahit, dan creamy. Beda dari teh hijau biasa, lho! Di Artea, kami punya **Matcha** dan Janji Koffee punya **Creamy Matcha**.',
     'americano': 'Americano adalah minuman kopi yang dibuat dengan mencampurkan espresso dengan air panas. Rasanya kuat dan pahit, cocok banget buat yang butuh semangat ekstra tanpa campuran susu.',
+    'long black': 'Long Black adalah kopi hitam yang dibuat dengan menuangkan dua seloki espresso di atas air panas. Ini mempertahankan krema kopi dan memberikan rasa yang lebih kuat dibandingkan Americano. Tersedia di **Janji Koffee**.',
     'spanish latte': 'Spanish Latte adalah varian kopi susu yang lebih manis dan creamy karena menggunakan susu kental manis dan krimer. Rasanya lembut, legit, dan tetap ada tendangan kopinya. Ini salah satu andalan di **Janji Koffee**!',
     'mojito': 'Mojito di Artea adalah minuman soda segar non-alkohol dengan rasa buah-buahan seperti strawberry atau leci. Rasanya super nyegerin, apalagi kalau diminum pas cuaca panas!',
     'espresso': 'Espresso adalah ekstrak kopi murni yang dibuat dengan mesin bertekanan tinggi. Porsinya kecil tapi kafeinnya nendang banget! Ini adalah dasar dari banyak minuman kopi lainnya.',
@@ -57,7 +58,7 @@ const definitionsMap: Record<string, string> = {
     'brown sugar': 'Kopi kekinian dengan manisnya gula aren. Rasa manisnya legit dan punya aroma khas yang menggoda.',
     'tiramisu': 'Terinspirasi dari dessert khas Italia, minuman ini punya rasa kopi, keju, dan coklat yang menyatu. Creamy dan nikmat!',
     'vanilla': 'Kopi susu dengan aroma vanilla yang lembut dan menenangkan. Pilihan aman buat kamu yang suka kopi dengan sentuhan manis.',
-    'kappucino': 'Kopi yang terisnpirasi dari kopi klasik Italia dengan komposisi yang dimodifikasi yaitu antara espresso, krimer, dan foam. Rasanya bold tapi tetap smooth.',
+    'kappucino': 'Kopi yang terinspirasi dari kopi klasik Italia dengan komposisi yang dimodifikasi yaitu antara espresso, krimer, dan foam. Rasanya bold tapi tetap smooth.',
     'taro': 'Minuman non-kopi dengan rasa talas ungu yang manis, creamy, dan sedikit gurih. Warnanya cantik, rasanya pun enak!',
     'red velvet': 'Rasa kue red velvet dalam bentuk minuman! Perpaduan rasa coklat dan hint rasa keju yang creamy. Manis dan memanjakan.',
     'butterscotch': 'Kopi dengan sirup butterscotch yang punya rasa manis karamel dan sedikit sentuhan butter. Unik dan bikin penasaran!',

@@ -97,7 +97,7 @@ const ArteaPage: React.FC = () => {
                 </div>
                 
                 <div>
-                    <h3 className="text-lg font-semibold text-white mb-4 border-b-2 border-stone-600 pb-2">Kontak Informasi</h3>
+                    <h3 className="text-lg font-semibold text-white mb-4 border-b-2 border-stone-600 pb-2">Terhubung</h3>
                     <a href="https://wa.me/6281225879494?text=Bismillah" target="_blank" rel="noopener noreferrer" aria-label="Hubungi Artea melalui WhatsApp" className="w-full text-center bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center">
                         <i className="bi bi-whatsapp mr-2" aria-hidden="true"></i> Whatsapp
                     </a>
