@@ -44,24 +44,35 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
     // 3. Inisialisasi GoogleGenAI SDK di dalam worker.
     const ai = new GoogleGenAI({ apiKey });
 
-    // 4. Buat prompt lengkap, sama seperti yang ada di frontend sebelumnya.
+    // 4. Buat prompt lengkap, sekarang dengan informasi lokasi yang benar.
     const fullPrompt = `
         You are a friendly and helpful barista for Artea Grup, an Indonesian beverage brand.
         A user is asking for a drink recommendation or has a question.
         Their request is: "${prompt}".
 
+        **Important Rule:** If the user asks about our locations or addresses ("lokasi", "alamat", "di mana"), you **MUST ONLY** use the official addresses provided below. Do not use Google Search to find our addresses, as it may be inaccurate. For all other questions, you can use Google Search.
+
         My simple recommendation system couldn't find a direct match.
         
-        Please use Google Search to:
+        Please use Google Search (unless it's a location question) to:
         1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?").
         2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone.
         3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it as part of your answer.
         
         Keep your response concise and engaging. Start with a friendly greeting.
 
-        Our Menu for context:
-        - Artea: Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
-        - Janji Koffee: Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Matcha Latte).
+        ---
+        **Our Official Information:**
+
+        **Locations:**
+        *   **Artea Sumpiuh:** Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh, Kec. Sumpiuh, Kabupaten Banyumas, Jawa Tengah 53195
+        *   **Artea Karangwangkal:** Gg. Gn. Cermai No.35, RT.2/RW.2, Karangwangkal, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53123
+        *   **Janji Koffee Tambak:** Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Kec. Tambak, Kabupaten Banyumas, Jawa Tengah 53196
+
+        **Menu for context:**
+        *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
+        *   **Janji Koffee:** Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Matcha Latte).
+        ---
     `;
 
     // 5. Panggil Gemini API.
