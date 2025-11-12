@@ -1,4 +1,3 @@
-
 // Impor tipe yang relevan dari @google/genai.
 // Meskipun kita tidak mengimpor SDK lengkap, memiliki tipe membantu type safety.
 import { GoogleGenAI, GenerateContentResponse, GroundingChunk } from '@google/genai';
@@ -71,7 +70,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
 
         **Menu for context:**
         *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
-        *   **Janji Koffee:** Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Matcha Latte).
+        *   **Janji Koffee:** Kopi Hitam (Americano, Espresso), Kopi Series (Spanish Latte, Butterscotch), Non Kopi (Choco Malt, Creamy Matcha, Creamy Green Tea).
         ---
     `;
 

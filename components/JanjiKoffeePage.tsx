@@ -22,7 +22,7 @@ const JanjiKoffeePage: React.FC = () => {
             icon: <i className="bi bi-cup-straw text-2xl text-emerald-300 w-8 text-center"></i>,
             title: 'Non Kopi',
             description: 'Pilihan menyegarkan untuk yang tidak minum kopi.',
-            variants: ['Choco Malt', 'Matcha Latte', 'Creamy Green Tea', 'Lemon Squash', 'Blue Ocean'],
+            variants: ['Choco Malt', 'Creamy Matcha', 'Creamy Green Tea', 'Lemon Squash', 'Blue Ocean'],
         },
     ];
 

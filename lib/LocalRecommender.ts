@@ -20,7 +20,7 @@ const arteaMenu: Menu = [
 const janjiKoffeeMenu: Menu = [
     'Americano', 'Espresso', 'Spanish Latte', 'Butterscotch', 'Spesial Mix',
     'Kapuccino', 'Vanilla', 'Tiramisu', 'Hazelnut', 'Brown Sugar', 'Choco Malt',
-    'Matcha Latte', 'Creamy Green Tea', 'Lemon Squash', 'Blue Ocean'
+    'Creamy Matcha', 'Creamy Green Tea', 'Lemon Squash', 'Blue Ocean'
 ];
 
 // The "brain" of our local AI. Maps keywords to potential drinks.
@@ -29,12 +29,12 @@ const keywordMap: Record<string, Drink[]> = {
     'buah': ['Teh Lemon', 'Teh Leci', 'Teh Markisa', 'Teh Strawberry', 'Mojito Strawberry', 'Mojito Mangga'],
     'kopi': ['Americano', 'Espresso', 'Spanish Latte', 'Kappucino', 'Hazelnut', 'Brown Sugar', 'Spesial Mix', 'Tiramisu', 'Vanilla', 'Kapuccino'],
     'pahit': ['Americano', 'Espresso'],
-    'susu': ['Milk Tea', 'Spanish Latte', 'Butterscotch', 'Matcha Latte', 'Creamy Green Tea'],
-    'creamy': ['Taro', 'Red Velvet', 'Strawberry', 'Mangga', 'Milk Tea', 'Spanish Latte', 'Matcha Latte'],
+    'susu': ['Milk Tea', 'Spanish Latte', 'Butterscotch', 'Creamy Matcha', 'Creamy Green Tea'],
+    'creamy': ['Taro', 'Red Velvet', 'Strawberry', 'Mangga', 'Milk Tea', 'Spanish Latte', 'Creamy Matcha'],
     'manis': ['Brown Sugar', 'Taro', 'Red Velvet', 'Teh Leci', 'Butterscotch', 'Spanish Latte', 'Milk Tea'],
     'teh': ['Teh Original', 'Milk Tea', 'Green Tea', 'Teh Lemon', 'Green Tea Milk'],
     'coklat': ['Choco Malt'],
-    'matcha': ['Matcha', 'Matcha Latte', 'Green Tea', 'Green Tea Milk'],
+    'matcha': ['Matcha', 'Creamy Matcha', 'Green Tea', 'Green Tea Milk'],
     'dingin': ['Mojito Strawberry', 'Teh Lemon', 'Lemon Squash'],
     'unik': ['Blue Ocean', 'Taro', 'Butterscotch'],
     'panas': ['Americano', 'Espresso', 'Kapuccino']
@@ -42,7 +42,7 @@ const keywordMap: Record<string, Drink[]> = {
 
 // Expanded "database" for definitions
 const definitionsMap: Record<string, string> = {
-    'matcha': 'Matcha adalah teh hijau bubuk dari Jepang yang terkenal dengan rasanya yang khas, sedikit pahit, dan creamy. Beda dari teh hijau biasa, lho! Di Artea, kami punya **Matcha** dan Janji Koffee punya **Matcha Latte**.',
+    'matcha': 'Matcha adalah teh hijau bubuk dari Jepang yang terkenal dengan rasanya yang khas, sedikit pahit, dan creamy. Beda dari teh hijau biasa, lho! Di Artea, kami punya **Matcha** dan Janji Koffee punya **Creamy Matcha**.',
     'americano': 'Americano adalah minuman kopi yang dibuat dengan mencampurkan espresso dengan air panas. Rasanya kuat dan pahit, cocok banget buat yang butuh semangat ekstra tanpa campuran susu.',
     'spanish latte': 'Spanish Latte adalah varian kopi susu yang lebih manis dan creamy karena menggunakan susu kental manis dan krimer. Rasanya lembut, legit, dan tetap ada tendangan kopinya. Ini salah satu andalan di **Janji Koffee**!',
     'mojito': 'Mojito di Artea adalah minuman soda segar non-alkohol dengan rasa buah-buahan seperti strawberry atau leci. Rasanya super nyegerin, apalagi kalau diminum pas cuaca panas!',
@@ -62,6 +62,7 @@ const definitionsMap: Record<string, string> = {
     'red velvet': 'Rasa kue red velvet dalam bentuk minuman! Perpaduan rasa coklat dan hint rasa keju yang creamy. Manis dan memanjakan.',
     'butterscotch': 'Kopi dengan sirup butterscotch yang punya rasa manis karamel dan sedikit sentuhan butter. Unik dan bikin penasaran!',
     'choco malt': 'Minuman coklat klasik dengan tambahan malt yang memberikan rasa gurih dan khas. Cocok buat segala usia!',
+    'creamy matcha': 'Nikmati ketenangan dengan rasa matcha premium yang khas dan lembut dalam balutan susu.',
     'lemon squash': 'Kesegaran maksimal dari lemon dan soda. Pilihan non-kopi yang super menyegarkan dan bikin melek!',
     'blue ocean': 'Minuman soda dengan sirup Blue Curaçao dan sentuhan rasa jeruk. Warnanya biru cantik seperti lautan dan rasanya segar tropis!'
 };

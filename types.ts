@@ -23,6 +23,16 @@ export interface Theme {
   accentColorHover: string;
 }
 
+export interface WebSource {
+  uri?: string;
+  title?: string;
+}
+
+export interface GroundingChunk {
+  web?: WebSource;
+}
+
+// FIX: Added missing LayoutItem interface used by DraggableItem.tsx.
 export interface LayoutItem {
   id: string;
   x: number;
@@ -31,13 +41,4 @@ export interface LayoutItem {
   height: number;
   minWidth?: number;
   minHeight?: number;
-}
-
-export interface WebSource {
-  uri?: string;
-  title?: string;
-}
-
-export interface GroundingChunk {
-  web?: WebSource;
 }
