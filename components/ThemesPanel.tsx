@@ -10,48 +10,68 @@ export const themes: Theme[] = [
     { 
         id: 'default', 
         name: 'Biru Artea', 
-        backgroundImage: 'https://picsum.photos/seed/artea/1920/1080',
+        backgroundImage: 'https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1920&q=80&fit=max',
         accentColor: '#38bdf8', // sky-400
         accentColorHover: '#0ea5e9' // sky-500
     },
     { 
         id: 'forest', 
         name: 'Hutan Tenang', 
-        backgroundImage: 'https://picsum.photos/seed/forest/1920/1080',
+        backgroundImage: 'https://images.unsplash.com/photo-1448375240586-882707db888b?w=1920&q=80&fit=max',
         accentColor: '#4ade80', // green-400
         accentColorHover: '#22c55e' // green-500
     },
     { 
         id: 'coffee', 
         name: 'Warm Coffee', 
-        backgroundImage: 'https://picsum.photos/seed/coffee/1920/1080',
+        backgroundImage: 'https://images.unsplash.com/photo-1511920183353-309c279ab4a3?w=1920&q=80&fit=max',
         accentColor: '#f59e0b', // amber-500
         accentColorHover: '#d97706' // amber-600
     },
     { 
         id: 'dusk', 
         name: 'Senja Ungu', 
-        backgroundImage: 'https://picsum.photos/seed/dusk/1920/1080',
+        backgroundImage: 'https://images.unsplash.com/photo-1523731174309-98c42c75a344?w=1920&q=80&fit=max',
         accentColor: '#c084fc', // purple-400
         accentColorHover: '#a855f7' // purple-500
     },
      { 
         id: 'sunset', 
         name: 'Matahari Terbenam', 
-        backgroundImage: 'https://picsum.photos/seed/sunset/1920/1080',
+        backgroundImage: 'https://images.unsplash.com/photo-1502867899-39147a544722?w=1920&q=80&fit=max',
         accentColor: '#fb923c', // orange-400
         accentColorHover: '#f97316' // orange-500
     },
     { 
         id: 'mono', 
         name: 'Hitam Putih', 
-        backgroundImage: 'https://picsum.photos/seed/mono/1920/1080?grayscale',
+        backgroundImage: 'https://images.unsplash.com/photo-1434725039720-aaad6dd32dfe?w=1920&q=80&fit=max',
         accentColor: '#a1a1aa', // stone-400
         accentColorHover: '#71717a' // stone-500
     },
 ];
 
 const ThemesPanel: React.FC<ThemesPanelProps> = ({ currentTheme, onThemeSelect }) => {
+    /**
+     * Generates an optimized thumbnail URL from a full-size Unsplash URL.
+     * It reduces the image dimensions for faster loading by modifying URL parameters.
+     * @param fullUrl The original high-resolution image URL.
+     * @returns A new URL for a smaller thumbnail.
+     */
+    const getThumbnailUrl = (fullUrl: string): string => {
+        try {
+            const url = new URL(fullUrl);
+            // Set a smaller width for the thumbnail and adjust quality for performance.
+            url.searchParams.set('w', '400');
+            url.searchParams.set('q', '75');
+            return url.toString();
+        } catch (e) {
+            console.error("Failed to parse theme URL for thumbnail:", e);
+            // Fallback to the original URL on any parsing error
+            return fullUrl; 
+        }
+    };
+
     return (
         <div className="flex flex-col h-full">
             <div className="text-center">
@@ -71,7 +91,7 @@ const ThemesPanel: React.FC<ThemesPanelProps> = ({ currentTheme, onThemeSelect }
                             aria-pressed={isActive}
                         >
                             <img 
-                                src={`${theme.backgroundImage}&blur=2`}
+                                src={getThumbnailUrl(theme.backgroundImage)}
                                 alt={`${theme.name} theme preview`}
                                 className="w-full h-32 object-cover"
                                 loading="lazy"
