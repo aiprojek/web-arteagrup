@@ -1,6 +1,7 @@
 // Impor tipe yang relevan dari @google/genai.
 // Meskipun kita tidak mengimpor SDK lengkap, memiliki tipe membantu type safety.
 import { GoogleGenAI, GenerateContentResponse, GroundingChunk } from '@google/genai';
+import type { ChatMessage } from '../../types'; // Impor tipe ChatMessage dari frontend
 
 // Definisikan tipe untuk environment variable kita agar TypeScript tahu tentang API_KEY.
 interface Env {
@@ -10,9 +11,13 @@ interface Env {
 // Definisikan tipe untuk data yang kita harapkan dari body request frontend.
 interface RequestBody {
   prompt: string;
-  // Kita tidak benar-benar menggunakan 'outlet' di sini karena prompt sudah mencakup semua konteks,
-  // tetapi ini menunjukkan bagaimana Anda bisa meneruskan lebih banyak data jika diperlukan.
-  outlet: 'artea' | 'janji-koffee' | 'semua';
+  history: ChatMessage[]; // Gunakan ChatMessage yang diimpor
+}
+
+// Tipe untuk format yang dibutuhkan Gemini API
+interface GeminiContent {
+    role: 'user' | 'model';
+    parts: { text: string }[];
 }
 
 // Handler utama untuk Cloudflare Worker.
@@ -22,7 +27,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
   try {
     // 1. Dapatkan body request dari frontend dan parse sebagai JSON.
     const body: RequestBody = await context.request.json();
-    const { prompt } = body;
+    const { prompt, history } = body;
 
     if (!prompt) {
       return new Response(JSON.stringify({ error: 'Prompt is required' }), {
@@ -43,25 +48,33 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
     // 3. Inisialisasi GoogleGenAI SDK di dalam worker.
     const ai = new GoogleGenAI({ apiKey });
 
-    // 4. Buat prompt lengkap, sekarang dengan informasi lokasi yang benar.
-    const fullPrompt = `
+    // 4. Konversi history dari format frontend ke format yang dibutuhkan Gemini
+    const geminiHistory: GeminiContent[] = history.map(msg => ({
+        role: msg.role,
+        parts: [{ text: msg.content }]
+    }));
+    
+    // Gabungkan history dengan prompt baru
+    const contents: GeminiContent[] = [
+        ...geminiHistory,
+        { role: 'user', parts: [{ text: prompt }] }
+    ];
+
+    // 5. Definisikan instruksi sistem untuk memberikan konteks kepada AI.
+    const systemInstruction = `
         You are a friendly and helpful barista for Artea Grup, an Indonesian beverage brand.
-        A user is asking for a drink recommendation or has a question.
-        Their request is: "${prompt}".
+        Your tone should be casual, helpful, and use simple Indonesian language.
 
-        **Important Rule:** If the user asks about our locations or addresses ("lokasi", "alamat", "di mana"), you **MUST ONLY** use the official addresses provided below. Do not use Google Search to find our addresses, as it may be inaccurate. For all other questions, you can use Google Search.
+        **Primary Rule:** If the user asks about our locations or addresses ("lokasi", "alamat", "di mana", "cabang"), you **MUST ONLY** use the official addresses provided in the context below. Do not use Google Search for addresses, as it may be inaccurate. For all other questions, you can use Google Search.
 
-        My simple recommendation system couldn't find a direct match.
-        
-        Please use Google Search (unless it's a location question) to:
-        1. Understand their query better if it's a general question (e.g., "what is matcha?", "what's a good drink for a hot day?").
-        2. Provide a helpful, summarized answer in a friendly, casual Indonesian tone.
-        3. If their query mentions a type of drink, you can check if a similar drink exists on our menu below and gently suggest it as part of your answer.
-        
-        Keep your response concise and engaging. Start with a friendly greeting.
+        **Your Task:**
+        1. Answer the user's latest prompt based on the provided conversation history and your knowledge.
+        2. If the query is general (e.g., "what is matcha?"), provide a helpful, summarized answer.
+        3. If their query mentions a type of drink, check if a similar drink exists on our menu and gently suggest it.
+        4. Keep your responses concise, engaging, and friendly.
 
         ---
-        **Our Official Information:**
+        **Our Official Information (Context):**
 
         **Locations:**
         *   **Artea Sumpiuh:** Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh, Kec. Sumpiuh, Kabupaten Banyumas, Jawa Tengah 53195
@@ -74,20 +87,21 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
         ---
     `;
 
-    // 5. Panggil Gemini API.
+    // 6. Panggil Gemini API.
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: fullPrompt,
+      contents: contents, // Gunakan history dan prompt baru
       config: {
+        systemInstruction: systemInstruction, // Tambahkan instruksi sistem
         tools: [{ googleSearch: {} }],
       },
     });
 
-    // 6. Ekstrak data yang diperlukan dari respons Gemini.
+    // 7. Ekstrak data yang diperlukan dari respons Gemini.
     const resultText = response.text;
     const sources: GroundingChunk[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
-    // 7. Kirim kembali data yang berhasil ke frontend sebagai JSON.
+    // 8. Kirim kembali data yang berhasil ke frontend sebagai JSON.
     return new Response(JSON.stringify({ text: resultText, sources }), {
       status: 200,
       headers: { 'Content-Type': 'application/json' },

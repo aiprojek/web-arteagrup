@@ -32,6 +32,13 @@ export interface GroundingChunk {
   web?: WebSource;
 }
 
+export interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+  sources?: GroundingChunk[];
+}
+
+
 // FIX: Added missing LayoutItem interface used by DraggableItem.tsx.
 export interface LayoutItem {
   id: string;
