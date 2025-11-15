@@ -90,6 +90,13 @@ export const getMenuForOutlet = (outlet: 'artea' | 'janji-koffee' | 'semua' | nu
 export const getLocalRecommendation = (prompt: string, availableMenu: Menu): LocalResult => {
     const lowerCasePrompt = prompt.toLowerCase();
 
+    // NEW: Check for contextual follow-up questions first.
+    // If found, bypass all local logic to let the more advanced Gemini handle it.
+    const followUpKeywords = ['kenapa', 'mengapa', 'alasannya'];
+    if (followUpKeywords.some(keyword => lowerCasePrompt.includes(keyword))) {
+        return null; 
+    }
+
     // Priority 1: Handle definition/informational queries.
     const informationalKeywords = ['apa itu', 'jelaskan', 'pengertian dari', 'definisi dari', 'apa sih'];
     for (const keyword of informationalKeywords) {
