@@ -9,7 +9,10 @@ const DrinkRecommender: React.FC = () => {
     const [currentMessage, setCurrentMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const menuRef = useRef<HTMLDivElement>(null);
+
 
     // Load history from localStorage on initial render
     useEffect(() => {
@@ -47,6 +50,30 @@ const DrinkRecommender: React.FC = () => {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [history, isLoading]);
+    
+    // Effect for closing menu on outside click or escape key
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+                setIsMenuOpen(false);
+            }
+        };
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsMenuOpen(false);
+            }
+        };
+
+        if (isMenuOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+            document.addEventListener('keydown', handleKeyDown);
+        }
+        
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isMenuOpen]);
 
 
     const handleSendMessage = async (e?: React.FormEvent<HTMLFormElement>) => {
@@ -138,6 +165,7 @@ const DrinkRecommender: React.FC = () => {
     const handleReset = () => {
         setHistory([]);
         setError('');
+        setIsMenuOpen(false); // Close menu after action
     }
 
     return (
@@ -147,14 +175,32 @@ const DrinkRecommender: React.FC = () => {
                     <h2 className="text-xl md:text-2xl font-bold text-white">Asisten AI Artea Grup</h2>
                     <p className="text-sm text-stone-400">Tanya apa saja seputar menu & lokasi.</p>
                 </div>
-                <button 
-                    onClick={handleReset} 
-                    className="flex-shrink-0 flex items-center text-sm text-stone-400 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 px-3 py-2 rounded-lg"
-                    aria-label="Reset percakapan"
-                >
-                    <i className="bi bi-arrow-clockwise mr-2"></i>
-                    <span>Reset</span>
-                </button>
+                <div className="relative" ref={menuRef}>
+                    <button
+                        onClick={() => setIsMenuOpen(!isMenuOpen)}
+                        className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-stone-300 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 rounded-full"
+                        aria-label="Opsi lainnya"
+                        aria-haspopup="true"
+                        aria-expanded={isMenuOpen}
+                    >
+                        <i className="bi bi-three-dots-vertical text-lg"></i>
+                    </button>
+                    {isMenuOpen && (
+                         <div className="absolute top-full right-0 mt-2 w-56 bg-stone-800/90 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden animate-fade-in-down z-10">
+                            <ul className="text-white text-sm" role="menu">
+                                <li role="menuitem">
+                                    <button
+                                        onClick={handleReset}
+                                        className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                                    >
+                                        <i className="bi bi-arrow-clockwise w-8 text-center text-base"></i>
+                                        <span>Reset Percakapan</span>
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+                    )}
+                </div>
             </header>
 
             <div ref={chatContainerRef} className="flex-grow w-full overflow-y-auto py-4 space-y-4">
@@ -228,6 +274,14 @@ const DrinkRecommender: React.FC = () => {
 
                 @keyframes pulse {
                     50% { opacity: .5; }
+                }
+                 @keyframes fade-in-down {
+                    from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+                .animate-fade-in-down {
+                    animation: fade-in-down 0.2s ease-out forwards;
+                    transform-origin: top right;
                 }
             `}</style>
         </div>
