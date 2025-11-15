@@ -108,9 +108,10 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
     });
 
   } catch (e) {
-    console.error(e);
-    // Kirim respons error yang jelas jika terjadi masalah di server.
-    return new Response(JSON.stringify({ error: 'Failed to process request on the server.' }), {
+    console.error('Error in Cloudflare Function:', e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    // Kirim pesan error yang lebih deskriptif ke frontend untuk debugging.
+    return new Response(JSON.stringify({ error: `Gagal memproses di server: ${errorMessage}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });

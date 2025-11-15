@@ -107,8 +107,18 @@ const DrinkRecommender: React.FC = () => {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+                // Coba parse error dari body response untuk pesan yang lebih jelas
+                let errorMsg = `Server merespons dengan status ${response.status}.`;
+                try {
+                    const errorData = await response.json();
+                    if (errorData.error) {
+                        errorMsg = errorData.error;
+                    }
+                } catch (jsonError) {
+                    // Jika body bukan JSON, mungkin ada pesan error lain
+                    console.error('Could not parse error JSON from server:', jsonError);
+                }
+                throw new Error(errorMsg);
             }
 
             const data = await response.json();
@@ -117,7 +127,9 @@ const DrinkRecommender: React.FC = () => {
 
         } catch (e) {
             console.error(e);
-            setError('Duh, AI kami sepertinya sedang istirahat. Silakan coba lagi sebentar lagi.');
+             // Tampilkan pesan error yang lebih spesifik yang kita dapatkan
+            const specificError = e instanceof Error ? e.message : 'Terjadi kesalahan tidak diketahui.';
+            setError(`Duh, AI kami sepertinya sedang istirahat. (${specificError})`);
         } finally {
             setIsLoading(false);
         }
