@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
-// FIX: Added getMenuForOutlet to imports and used it to provide the necessary second argument to getLocalRecommendation.
-import { getLocalRecommendation, LocalResult, getMenuForOutlet } from '../lib/LocalRecommender';
-import { GroundingChunk, ChatMessage } from '../types';
+import { getLocalRecommendation, getMenuForOutlet } from '../lib/LocalRecommender';
+import { ChatMessage } from '../types';
+import { GoogleGenAI } from '@google/genai';
 
 const DrinkRecommender: React.FC = () => {
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -61,13 +61,10 @@ const DrinkRecommender: React.FC = () => {
         setIsLoading(true);
 
         const newUserMessage: ChatMessage = { role: 'user', content: prompt };
-        const newHistory = [...history, newUserMessage];
-        setHistory(newHistory);
+        setHistory(prev => [...prev, newUserMessage]);
         setCurrentMessage('');
 
         // 1. Try local AI first.
-        // FIX: The local recommender needs the list of available menu items to check against.
-        // We'll provide the combined menu from both outlets since this is a general assistant.
         const availableMenu = getMenuForOutlet('semua');
         const localResult = getLocalRecommendation(prompt, availableMenu);
         if (localResult) {
@@ -98,26 +95,74 @@ const DrinkRecommender: React.FC = () => {
         }
 
 
-        // 2. Fallback to Gemini API via our proxy
+        // 2. Fallback to client-side Gemini API call
         try {
-            const response = await fetch('/api/recommend', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, history }), // Send previous history for context
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            if (!process.env.API_KEY) {
+                throw new Error("API key is not configured.");
             }
 
-            const data = await response.json();
-            const aiMessage: ChatMessage = { role: 'model', content: data.text, sources: data.sources };
+            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            
+            const geminiHistory = history.map(msg => ({
+                role: msg.role,
+                parts: [{ text: msg.content }]
+            }));
+            
+            const contents = [
+                ...geminiHistory,
+                { role: 'user', parts: [{ text: prompt }] }
+            ];
+
+            const systemInstruction = `
+                You are a friendly and helpful barista for Artea Grup, an Indonesian beverage brand.
+                Your tone should be casual, helpful, and use simple Indonesian language.
+
+                **Primary Rule:** If the user asks about our locations or addresses ("lokasi", "alamat", "di mana", "cabang"), you **MUST ONLY** use the official addresses provided in the context below. Do not use Google Search for addresses, as it may be inaccurate. For all other questions, you can use Google Search.
+
+                **Your Task:**
+                1. Answer the user's latest prompt based on the provided conversation history and your knowledge.
+                2. If the query is general (e.g., "what is matcha?"), provide a helpful, summarized answer.
+                3. If their query mentions a type of drink, check if a similar drink exists on our menu and gently suggest it.
+                4. Keep your responses concise, engaging, and friendly.
+
+                ---
+                **Our Official Information (Context):**
+
+                **Locations:**
+                *   **Artea Sumpiuh:** Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh, Kec. Sumpiuh, Kabupaten Banyumas, Jawa Tengah 53195
+                *   **Artea Karangwangkal:** Gg. Gn. Cermai No.35, RT.2/RW.2, Karangwangkal, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53123
+                *   **Janji Koffee Tambak:** Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Kec. Tambak, Kabupaten Banyumas, Jawa Tengah 53196
+
+                **Menu for context:**
+                *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut, Brown Sugar, Spesial Mix, Tiramisu, Vanilla, Kappucino), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
+                *   **Janji Koffee:** Kopi Hitam (Americano, Long Black, Espresso), Kopi Series (Spanish Latte, Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar), Non Kopi (Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean).
+                ---
+            `;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: contents,
+                config: {
+                    systemInstruction: systemInstruction,
+                    tools: [{ googleSearch: {} }],
+                },
+            });
+            
+            const resultText = response.text;
+            const sources = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+
+            const aiMessage: ChatMessage = { role: 'model', content: resultText, sources: sources };
             setHistory(prev => [...prev, aiMessage]);
 
         } catch (e) {
             console.error(e);
-            setError('Duh, AI kami sepertinya sedang istirahat. Silakan coba lagi sebentar lagi.');
+            let errorMessage = 'Duh, AI kami sepertinya sedang istirahat. Silakan coba lagi sebentar lagi.';
+            if (e instanceof Error && e.message.includes("API key not valid")) {
+                errorMessage = 'Kunci API sepertinya tidak valid. Mohon periksa kembali.';
+            } else if (e instanceof Error && e.message.includes("API key is not configured")) {
+                 errorMessage = 'Kunci API belum diatur. Fitur AI tidak akan berfungsi.';
+            }
+            setError(errorMessage);
         } finally {
             setIsLoading(false);
         }
@@ -126,6 +171,7 @@ const DrinkRecommender: React.FC = () => {
     const handleReset = () => {
         setHistory([]);
         setError('');
+        localStorage.removeItem('artea-grup-chat-history');
     }
 
     return (
