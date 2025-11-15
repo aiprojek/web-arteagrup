@@ -142,14 +142,14 @@ const DrinkRecommender: React.FC = () => {
 
     return (
         <div className="flex flex-col h-full max-h-[80vh] md:max-h-full">
-            <header className="flex-shrink-0 flex flex-col sm:flex-row justify-between sm:items-center gap-3 sm:gap-4 pb-4 border-b border-stone-700/50">
-                <div className="text-center sm:text-left">
+            <header className="flex-shrink-0 flex justify-between items-center pb-4 border-b border-stone-700/50">
+                <div className="text-left">
                     <h2 className="text-xl md:text-2xl font-bold text-white">Asisten AI Artea Grup</h2>
                     <p className="text-sm text-stone-400">Tanya apa saja seputar menu & lokasi.</p>
                 </div>
                 <button 
                     onClick={handleReset} 
-                    className="flex-shrink-0 self-center sm:self-auto flex items-center text-sm text-stone-400 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 px-3 py-2 rounded-lg"
+                    className="flex-shrink-0 flex items-center text-sm text-stone-400 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 px-3 py-2 rounded-lg"
                     aria-label="Reset percakapan"
                 >
                     <i className="bi bi-arrow-clockwise mr-2"></i>
