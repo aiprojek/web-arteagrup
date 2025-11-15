@@ -50,7 +50,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
                     </button>
                 </header>
                 <div className="overflow-y-auto flex-grow">
-                    <div className="w-full max-w-4xl mx-auto px-6 md:px-8 pt-20 pb-12">
+                    <div className="w-full max-w-4xl mx-auto px-6 md:px-8 pt-20 pb-12 h-full flex flex-col">
                         {children}
                     </div>
                 </div>
