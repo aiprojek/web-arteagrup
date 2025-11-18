@@ -1,8 +1,8 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
-// FIX: Added getMenuForOutlet to imports and used it to provide the necessary second argument to getLocalRecommendation.
-import { getLocalRecommendation, LocalResult, getMenuForOutlet } from '../lib/LocalRecommender';
-import { GroundingChunk, ChatMessage } from '../types';
+import { getLocalRecommendation, getMenuForOutlet } from '../lib/LocalRecommender';
+import { ChatMessage } from '../types';
 
 const DrinkRecommender: React.FC = () => {
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -10,20 +10,45 @@ const DrinkRecommender: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    
+    // New state for personalization
+    const [userName, setUserName] = useState<string | null>(null);
+    const [awaitingName, setAwaitingName] = useState(false);
+
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
-
-    // Load history from localStorage on initial render
+    // Initialize Data
     useEffect(() => {
         try {
+            // 1. Load Name
+            const storedName = localStorage.getItem('artea-user-name');
+            if (storedName) {
+                setUserName(storedName);
+            }
+
+            // 2. Load History
             const savedHistory = localStorage.getItem('artea-grup-chat-history');
             if (savedHistory) {
                 setHistory(JSON.parse(savedHistory));
+            } else {
+                // 3. If No History, Initialize Conversation
+                if (storedName) {
+                    setHistory([{ 
+                        role: 'model', 
+                        content: `Halo Kak **${storedName}**! Senang bertemu kembali. 👋\n\nAda yang bisa saya bantu seputar menu atau lokasi Artea Grup hari ini?` 
+                    }]);
+                } else {
+                    setAwaitingName(true);
+                    setHistory([{ 
+                        role: 'model', 
+                        content: "Halo! Saya asisten AI Artea Grup. Supaya lebih akrab, boleh tau siapa nama Kakak?" 
+                    }]);
+                }
             }
         } catch (e) {
-            console.error("Failed to load chat history from localStorage", e);
-            setError("Gagal memuat riwayat percakapan.");
+            console.error("Failed to load data from localStorage", e);
+            setError("Gagal memuat data lokal.");
         }
     }, []);
 
@@ -33,11 +58,11 @@ const DrinkRecommender: React.FC = () => {
             if (history.length > 0) {
                 localStorage.setItem('artea-grup-chat-history', JSON.stringify(history));
             } else {
-                localStorage.removeItem('artea-grup-chat-history'); // Clean up if history is cleared
+                localStorage.removeItem('artea-grup-chat-history');
             }
         } catch (e) {
             if (e instanceof DOMException && (e.name === 'QuotaExceededError' || e.code === 22)) {
-                setError('Penyimpanan lokal penuh! Riwayat percakapan tidak dapat disimpan. Mohon reset percakapan.');
+                setError('Penyimpanan lokal penuh! Riwayat percakapan tidak dapat disimpan.');
             } else {
                 console.error("Failed to save chat history:", e);
             }
@@ -49,7 +74,7 @@ const DrinkRecommender: React.FC = () => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [history, isLoading]);
+    }, [history, isLoading, awaitingName]);
     
     // Effect for closing menu on outside click or escape key
     useEffect(() => {
@@ -87,14 +112,35 @@ const DrinkRecommender: React.FC = () => {
         setError('');
         setIsLoading(true);
 
+        // --- SPECIAL FLOW: SETTING NAME ---
+        if (awaitingName) {
+            // Treat input as name
+            const newName = prompt; // Keep original casing for display
+            localStorage.setItem('artea-user-name', newName);
+            setUserName(newName);
+            setAwaitingName(false);
+
+            // Update UI
+            setHistory(prev => [
+                ...prev,
+                { role: 'user', content: newName },
+                { 
+                    role: 'model', 
+                    content: `Salam kenal, Kak **${newName}**! 👋\n\nSaya siap bantu carikan minuman yang pas atau info lokasi. Mau tanya apa sekarang?` 
+                }
+            ]);
+            setCurrentMessage('');
+            setIsLoading(false);
+            return;
+        }
+        // ----------------------------------
+
         const newUserMessage: ChatMessage = { role: 'user', content: prompt };
         const newHistory = [...history, newUserMessage];
         setHistory(newHistory);
         setCurrentMessage('');
 
         // 1. Try local AI first.
-        // FIX: The local recommender needs the list of available menu items to check against.
-        // We'll provide the combined menu from both outlets since this is a general assistant.
         const availableMenu = getMenuForOutlet('semua');
         const localResult = getLocalRecommendation(prompt, availableMenu);
         if (localResult) {
@@ -102,25 +148,28 @@ const DrinkRecommender: React.FC = () => {
              if (localResult.type === 'recommendation') {
                 switch (localResult.reason) {
                     case 'Rekomendasi Hari Ini':
-                        content = `Tentu! **Rekomendasi Hari Ini** dari Asisten AI jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
+                        content = `Tentu, Kak ${userName || ''}! **Rekomendasi Hari Ini** jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
                         break;
                     case 'Minuman Terlaris':
-                        content = `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, kamu wajib coba!`;
+                        content = `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, Kak ${userName || ''} wajib coba!`;
                         break;
                     default:
                         if (localResult.reason.toLowerCase() === localResult.drink.toLowerCase()) {
-                            content = `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kamu pasti suka.`;
+                            content = `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kak ${userName || ''} pasti suka.`;
                         } else {
-                           content = `Tentu! Untuk kamu yang lagi cari minuman **${localResult.reason}**, sepertinya kamu bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
+                           content = `Tentu! Untuk Kakak yang lagi cari minuman **${localResult.reason}**, sepertinya bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
                         }
                 }
             } else if (localResult.type === 'definition') {
                 content = localResult.content;
             }
             
-            const aiMessage: ChatMessage = { role: 'model', content };
-            setHistory(prev => [...prev, aiMessage]);
-            setIsLoading(false);
+            // Add slight delay for natural feel
+            setTimeout(() => {
+                const aiMessage: ChatMessage = { role: 'model', content };
+                setHistory(prev => [...prev, aiMessage]);
+                setIsLoading(false);
+            }, 600);
             return;
         }
 
@@ -130,11 +179,10 @@ const DrinkRecommender: React.FC = () => {
             const response = await fetch('/api/recommend', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt, history }), // Send previous history for context
+                body: JSON.stringify({ prompt, history }), 
             });
 
             if (!response.ok) {
-                // Coba parse error dari body response untuk pesan yang lebih jelas
                 let errorMsg = `Server merespons dengan status ${response.status}.`;
                 try {
                     const errorData = await response.json();
@@ -142,7 +190,6 @@ const DrinkRecommender: React.FC = () => {
                         errorMsg = errorData.error;
                     }
                 } catch (jsonError) {
-                    // Jika body bukan JSON, mungkin ada pesan error lain
                     console.error('Could not parse error JSON from server:', jsonError);
                 }
                 throw new Error(errorMsg);
@@ -154,7 +201,6 @@ const DrinkRecommender: React.FC = () => {
 
         } catch (e) {
             console.error(e);
-             // Tampilkan pesan error yang lebih spesifik yang kita dapatkan
             const specificError = e instanceof Error ? e.message : 'Terjadi kesalahan tidak diketahui.';
             setError(`Duh, AI kami sepertinya sedang istirahat. (${specificError})`);
         } finally {
@@ -165,7 +211,29 @@ const DrinkRecommender: React.FC = () => {
     const handleReset = () => {
         setHistory([]);
         setError('');
-        setIsMenuOpen(false); // Close menu after action
+        setIsMenuOpen(false);
+        localStorage.removeItem('artea-grup-chat-history');
+
+        // Re-initialize based on whether we know the user's name
+        if (userName) {
+             setHistory([{ role: 'model', content: `Halo lagi Kak **${userName}**! Mari kita mulai dari awal. Ada yang bisa dibantu?` }]);
+             setAwaitingName(false);
+        } else {
+             setAwaitingName(true);
+             setHistory([{ role: 'model', content: "Halo! Boleh tau siapa nama Kakak?" }]);
+        }
+    }
+
+    const handleChangeName = () => {
+        localStorage.removeItem('artea-user-name');
+        localStorage.removeItem('artea-grup-chat-history');
+        setUserName(null);
+        setHistory([]);
+        setError('');
+        setIsMenuOpen(false);
+        
+        setAwaitingName(true);
+        setHistory([{ role: 'model', content: "Halo! Boleh tau siapa nama Kakak?" }]);
     }
 
     return (
@@ -173,7 +241,9 @@ const DrinkRecommender: React.FC = () => {
             <header className="flex-shrink-0 flex justify-between items-center pb-4 border-b border-stone-700/50">
                 <div className="text-left">
                     <h2 className="text-xl md:text-2xl font-bold text-white">Asisten AI Artea Grup</h2>
-                    <p className="text-sm text-stone-400">Tanya apa saja seputar menu & lokasi.</p>
+                    <p className="text-sm text-stone-400">
+                        {userName ? `Sedang melayani: ${userName}` : 'Tanya apa saja seputar menu & lokasi.'}
+                    </p>
                 </div>
                 <div className="relative" ref={menuRef}>
                     <button
@@ -197,6 +267,15 @@ const DrinkRecommender: React.FC = () => {
                                         <span>Reset Percakapan</span>
                                     </button>
                                 </li>
+                                <li role="menuitem">
+                                    <button
+                                        onClick={handleChangeName}
+                                        className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors border-t border-white/10"
+                                    >
+                                        <i className="bi bi-person-badge w-8 text-center text-base"></i>
+                                        <span>Ganti Nama</span>
+                                    </button>
+                                </li>
                             </ul>
                         </div>
                     )}
@@ -204,13 +283,8 @@ const DrinkRecommender: React.FC = () => {
             </header>
 
             <div ref={chatContainerRef} className="flex-grow w-full overflow-y-auto py-4 space-y-4">
-                {history.length === 0 && !isLoading && (
-                    <div className="text-center text-stone-400 p-8 flex flex-col items-center h-full justify-center">
-                         <i className="bi bi-chat-quote-fill text-4xl mb-4 text-[var(--accent-color)]"></i>
-                         <p className="font-semibold">Selamat datang!</p>
-                         <p className="text-sm">Saya asisten AI Artea Grup. Ada yang bisa dibantu?</p>
-                    </div>
-                )}
+                {/* Removed the fallback empty state message because we always initialize with a greeting now */}
+                
                 {history.map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-md lg:max-w-lg rounded-xl px-4 py-2 ${msg.role === 'user' ? 'bg-[var(--accent-color)] text-white rounded-br-none' : 'bg-stone-700/80 text-stone-200 rounded-bl-none'}`}>
@@ -250,10 +324,11 @@ const DrinkRecommender: React.FC = () => {
                         type="text"
                         value={currentMessage}
                         onChange={(e) => setCurrentMessage(e.target.value)}
-                        placeholder="Ketik pesanmu di sini..."
+                        placeholder={awaitingName ? "Ketik nama kamu..." : "Ketik pesanmu di sini..."}
                         className="w-full flex-grow p-3 bg-stone-700/50 border-2 border-stone-600 rounded-lg text-stone-200 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] focus:border-[var(--accent-color)] transition-colors"
-                        aria-label="Ketik pesan untuk asisten AI"
+                        aria-label={awaitingName ? "Masukkan nama anda" : "Ketik pesan untuk asisten AI"}
                         disabled={isLoading}
+                        autoFocus={awaitingName}
                     />
                     <button
                         type="submit"
