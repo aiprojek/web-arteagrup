@@ -116,9 +116,15 @@ const DrinkRecommender: React.FC = () => {
         if (awaitingName) {
             // Treat input as name
             const newName = prompt; // Keep original casing for display
+            const isRenaming = !!userName; // Check if we already had a name before
+
             localStorage.setItem('artea-user-name', newName);
             setUserName(newName);
             setAwaitingName(false);
+
+            const responseText = isRenaming
+                ? `Oke, siap! Sekarang saya panggil Kak **${newName}** ya. Mau tanya menu apa lagi?`
+                : `Salam kenal, Kak **${newName}**! 👋\n\nSaya siap bantu carikan minuman yang pas atau info lokasi. Mau tanya apa sekarang?`;
 
             // Update UI
             setHistory(prev => [
@@ -126,7 +132,7 @@ const DrinkRecommender: React.FC = () => {
                 { role: 'user', content: newName },
                 { 
                     role: 'model', 
-                    content: `Salam kenal, Kak **${newName}**! 👋\n\nSaya siap bantu carikan minuman yang pas atau info lokasi. Mau tanya apa sekarang?` 
+                    content: responseText
                 }
             ]);
             setCurrentMessage('');
@@ -225,15 +231,12 @@ const DrinkRecommender: React.FC = () => {
     }
 
     const handleChangeName = () => {
-        localStorage.removeItem('artea-user-name');
-        localStorage.removeItem('artea-grup-chat-history');
-        setUserName(null);
-        setHistory([]);
-        setError('');
         setIsMenuOpen(false);
-        
         setAwaitingName(true);
-        setHistory([{ role: 'model', content: "Halo! Boleh tau siapa nama Kakak?" }]);
+        setHistory(prev => [
+            ...prev, 
+            { role: 'model', content: "Kamu mau ganti nama? Kalau iya tulis di bawah yah 👇" }
+        ]);
     }
 
     return (
