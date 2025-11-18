@@ -116,27 +116,45 @@ const DrinkRecommender: React.FC = () => {
         if (awaitingName) {
             // Treat input as name
             const newName = prompt; // Keep original casing for display
-            const isRenaming = !!userName; // Check if we already had a name before
-
+            
             localStorage.setItem('artea-user-name', newName);
             setUserName(newName);
             setAwaitingName(false);
 
-            const responseText = isRenaming
-                ? `Oke, siap! Sekarang saya panggil Kak **${newName}** ya. Mau tanya menu apa lagi?`
-                : `Salam kenal, Kak **${newName}**! 👋\n\nSaya siap bantu carikan minuman yang pas atau info lokasi. Mau tanya apa sekarang?`;
-
-            // Update UI
-            setHistory(prev => [
-                ...prev,
-                { role: 'user', content: newName },
-                { 
-                    role: 'model', 
-                    content: responseText
-                }
-            ]);
+            // Update UI with User's name immediately
+            const newUserMessage: ChatMessage = { role: 'user', content: newName };
+            setHistory(prev => [...prev, newUserMessage]);
             setCurrentMessage('');
-            setIsLoading(false);
+
+            // Construct a special prompt for the AI to find meaning and pray
+            const specialPrompt = `Nama saya adalah "${newName}". Tolong cari arti nama "${newName}" yang bagus dan positif di internet (gunakan Google Search). Berikan pujian yang tulus atas nama tersebut, doakan kebaikan untuk saya, dan akhiri dengan menyapa saya kembali lalu tawarkan bantuan seputar menu Artea atau Janji Koffee. Gunakan bahasa Indonesia yang santai, ramah, dan akrab.`;
+
+            try {
+                const response = await fetch('/api/recommend', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // We send the special prompt, but the 'history' (from state) doesn't include the new name yet (React state update batching).
+                    // This is actually perfect because the backend appends the 'prompt' as the user's message.
+                    // So the AI sees: [Previous History] -> User: "Nama saya ... cari arti ..."
+                    body: JSON.stringify({ prompt: specialPrompt, history }), 
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server status ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiMessage: ChatMessage = { role: 'model', content: data.text, sources: data.sources };
+                setHistory(prev => [...prev, aiMessage]);
+
+            } catch (e) {
+                console.error(e);
+                // Fallback if API fails
+                const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan! Ada yang bisa saya bantu soal menu hari ini?`;
+                setHistory(prev => [...prev, { role: 'model', content: fallbackMessage }]);
+            } finally {
+                setIsLoading(false);
+            }
             return;
         }
         // ----------------------------------
