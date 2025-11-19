@@ -1,5 +1,5 @@
+
 // Impor tipe yang relevan dari @google/genai.
-// Meskipun kita tidak mengimpor SDK lengkap, memiliki tipe membantu type safety.
 import { GoogleGenAI, GenerateContentResponse, GroundingChunk } from '@google/genai';
 import type { ChatMessage } from '../../types'; // Impor tipe ChatMessage dari frontend
 
@@ -21,8 +21,6 @@ interface GeminiContent {
 }
 
 // Handler utama untuk Cloudflare Worker.
-// Ini akan dijalankan setiap kali ada request ke /api/recommend
-// FIX: Replaced 'PagesFunction' with an inline type for the context object, as 'PagesFunction' is a Cloudflare-specific type and was not defined.
 export const onRequestPost = async (context: { request: Request; env: Env }): Promise<Response> => {
   try {
     // 1. Dapatkan body request dari frontend dan parse sebagai JSON.
@@ -62,43 +60,47 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
 
     // 5. Definisikan instruksi sistem untuk memberikan konteks kepada AI.
     const systemInstruction = `
-        You are a friendly and helpful barista for Artea Grup, an Indonesian beverage brand.
-        Your tone should be casual, helpful, and use simple Indonesian language.
+        You are a friendly, cool, and helpful barista assistant for Artea Grup, an Indonesian beverage brand.
+        Your tone should be casual (gaul), warm, helpful, and use "Kak" to address the user. Use simple and engaging Indonesian.
 
-        **Primary Rule:** If the user asks about our locations or addresses ("lokasi", "alamat", "di mana", "cabang"), you **MUST ONLY** use the official addresses provided in the context below. Do not use Google Search for addresses, as it may be inaccurate. For all other questions, you can use Google Search.
+        **CRITICAL: PERSONALIZATION RULES**
+        If the user provides their name or you are asked to find the meaning of a name:
+        1.  **SEARCH:** You MUST use Google Search to find the positive meaning of the name.
+        2.  **COMPLIMENT:** Give a sincere and warm compliment about the name.
+        3.  **PRAYER (DOA):** You MUST offer a good prayer (doa) for the user (e.g., "Semoga sehat selalu," "Semoga rejekinya lancar," "Semoga hari ini penuh berkah"). **This is mandatory.**
+        4.  **TRANSITION:** After the personal touch, gracefully transition to offering help with Artea or Janji Koffee drinks.
 
-        **Your Task:**
-        1. Answer the user's latest prompt based on the provided conversation history and your knowledge.
-        2. If the query is general (e.g., "what is matcha?"), provide a helpful, summarized answer.
-        3. If their query mentions a type of drink, check if a similar drink exists on our menu and gently suggest it.
-        4. Keep your responses concise, engaging, and friendly.
+        **General Rules:**
+        1. **Addresses/Locations:** If asked about locations/addresses, **ONLY** use the context below. Do not search for addresses.
+        2. **Drink Knowledge:** If asked about drinks, explain them appetizingly.
+        3. **Context:** Use the menu and location data provided below.
 
         ---
-        **Our Official Information (Context):**
+        **DATA CONTEXT:**
 
         **Locations:**
-        *   **Artea Sumpiuh:** Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh, Kec. Sumpiuh, Kabupaten Banyumas, Jawa Tengah 53195
-        *   **Artea Karangwangkal:** Gg. Gn. Cermai No.35, RT.2/RW.2, Karangwangkal, Kec. Purwokerto Utara, Kabupaten Banyumas, Jawa Tengah 53123
-        *   **Janji Koffee Tambak:** Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Kec. Tambak, Kabupaten Banyumas, Jawa Tengah 53196
+        *   **Artea Sumpiuh:** Jl. Pemotongan Pasar No.I, RT.04/RW.01, Barat Pasar, Sumpiuh, Banyumas.
+        *   **Artea Karangwangkal:** Gg. Gn. Cermai No.35, RT.2/RW.2, Karangwangkal, Purwokerto Utara.
+        *   **Janji Koffee Tambak:** Jl. Raya Tambak Kamulyan (utara Polsek Tambak), Tambak, Banyumas.
 
-        **Menu for context:**
-        *   **Artea:** Teh Original, Teh Buah (Lemon, Leci), Milk Tea, Green Tea, Matcha, Kopi Series (Americano, Hazelnut, Brown Sugar, Spesial Mix, Tiramisu, Vanilla, Kappucino), Creamy (Taro, Red Velvet), Mojito (Strawberry, etc.).
-        *   **Janji Koffee:** Kopi Hitam (Americano, Long Black, Espresso), Kopi Series (Spanish Latte, Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar), Non Kopi (Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean).
+        **Menu Highlights:**
+        *   **Artea (Tea Specialist):** Teh Original, Teh Buah (Lemon, Leci, Markisa), Milk Tea, Green Tea, Matcha. Also Mojito Series (Soda + Fruit).
+        *   **Janji Koffee (Coffee & Non-Coffee):** Kopi Hitam (Americano, Espresso), Kopi Susu (Spanish Latte, Butterscotch, Brown Sugar), Non-Kopi (Choco Malt, Creamy Matcha, Lemon Squash).
         ---
     `;
 
     // 6. Panggil Gemini API.
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: contents, // Gunakan history dan prompt baru
+      contents: contents,
       config: {
-        systemInstruction: systemInstruction, // Tambahkan instruksi sistem
+        systemInstruction: systemInstruction,
         tools: [{ googleSearch: {} }],
       },
     });
 
     // 7. Ekstrak data yang diperlukan dari respons Gemini.
-    const resultText = response.text;
+    const resultText = response.text || "Maaf, saya sedang berpikir terlalu keras. Bisa ulangi lagi?";
     const sources: GroundingChunk[] = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
 
     // 8. Kirim kembali data yang berhasil ke frontend sebagai JSON.
@@ -110,7 +112,6 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
   } catch (e) {
     console.error('Error in Cloudflare Function:', e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
-    // Kirim pesan error yang lebih deskriptif ke frontend untuk debugging.
     return new Response(JSON.stringify({ error: `Gagal memproses di server: ${errorMessage}` }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

@@ -115,7 +115,7 @@ const DrinkRecommender: React.FC = () => {
         // --- SPECIAL FLOW: SETTING NAME ---
         if (awaitingName) {
             // Treat input as name
-            const newName = prompt; // Keep original casing for display
+            const newName = prompt; 
             
             localStorage.setItem('artea-user-name', newName);
             setUserName(newName);
@@ -123,19 +123,27 @@ const DrinkRecommender: React.FC = () => {
 
             // Update UI with User's name immediately
             const newUserMessage: ChatMessage = { role: 'user', content: newName };
-            setHistory(prev => [...prev, newUserMessage]);
+            // We create a temporary history for display to show the name input
+            // Note: We don't save this strictly to localStorage logic here yet because the response comes later
+            const displayHistory = [...history, newUserMessage];
+            setHistory(displayHistory);
             setCurrentMessage('');
 
-            // Construct a special prompt for the AI to find meaning and pray
-            const specialPrompt = `Nama saya adalah "${newName}". Tolong cari arti nama "${newName}" yang bagus dan positif di internet (gunakan Google Search). Berikan pujian yang tulus atas nama tersebut, doakan kebaikan untuk saya, dan akhiri dengan menyapa saya kembali lalu tawarkan bantuan seputar menu Artea atau Janji Koffee. Gunakan bahasa Indonesia yang santai, ramah, dan akrab.`;
+            // Construct a special system-directed prompt for the AI
+            const specialPrompt = `Nama saya adalah "${newName}". 
+            Tugasmu adalah melakukan hal berikut secara berurutan dalam satu respon:
+            1. Cari "arti nama ${newName}" yang positif dan indah menggunakan Google Search.
+            2. Berikan pujian yang tulus dan hangat mengenai nama tersebut.
+            3. **Wajib:** Ucapkan doa yang baik untuk saya (misalnya: semoga sehat selalu, rejekinya lancar, atau dimudahkan urusannya).
+            4. Sapa saya kembali dengan nama tersebut dan tawarkan bantuan seputar menu minuman Artea atau Janji Koffee.
+            
+            Gunakan bahasa Indonesia yang gaul tapi sopan, ramah, dan akrab layaknya barista favorit.`;
 
             try {
                 const response = await fetch('/api/recommend', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // We send the special prompt, but the 'history' (from state) doesn't include the new name yet (React state update batching).
-                    // This is actually perfect because the backend appends the 'prompt' as the user's message.
-                    // So the AI sees: [Previous History] -> User: "Nama saya ... cari arti ..."
+                    // We send the special prompt, but pass the existing history so the AI knows context if any
                     body: JSON.stringify({ prompt: specialPrompt, history }), 
                 });
 
@@ -150,7 +158,7 @@ const DrinkRecommender: React.FC = () => {
             } catch (e) {
                 console.error(e);
                 // Fallback if API fails
-                const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan! Ada yang bisa saya bantu soal menu hari ini?`;
+                const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan dan penuh berkah! Ada yang bisa saya bantu soal menu hari ini?`;
                 setHistory(prev => [...prev, { role: 'model', content: fallbackMessage }]);
             } finally {
                 setIsLoading(false);
@@ -164,10 +172,14 @@ const DrinkRecommender: React.FC = () => {
         setHistory(newHistory);
         setCurrentMessage('');
 
-        // 1. Try local AI first.
+        // 1. Try local AI first (ONLY if not setting name)
         const availableMenu = getMenuForOutlet('semua');
         const localResult = getLocalRecommendation(prompt, availableMenu);
-        if (localResult) {
+        
+        // Logic to bypass local recommendation if the prompt implies a question about the name or prayer
+        const isPersonalQuery = prompt.toLowerCase().includes('arti nama') || prompt.toLowerCase().includes('doa');
+
+        if (localResult && !isPersonalQuery) {
             let content = '';
              if (localResult.type === 'recommendation') {
                 switch (localResult.reason) {
@@ -233,28 +245,29 @@ const DrinkRecommender: React.FC = () => {
     };
     
     const handleReset = () => {
-        setHistory([]);
         setError('');
         setIsMenuOpen(false);
-        localStorage.removeItem('artea-grup-chat-history');
-
-        // Re-initialize based on whether we know the user's name
+        
+        // Keep name, just reset chat
         if (userName) {
              setHistory([{ role: 'model', content: `Halo lagi Kak **${userName}**! Mari kita mulai dari awal. Ada yang bisa dibantu?` }]);
              setAwaitingName(false);
         } else {
-             setAwaitingName(true);
+             // Full reset if no name
              setHistory([{ role: 'model', content: "Halo! Boleh tau siapa nama Kakak?" }]);
+             setAwaitingName(true);
         }
+        // Note: useEffect will handle saving this new history to localStorage
     }
 
     const handleChangeName = () => {
         setIsMenuOpen(false);
         setAwaitingName(true);
-        setHistory(prev => [
-            ...prev, 
-            { role: 'model', content: "Kamu mau ganti nama? Kalau iya tulis di bawah yah 👇" }
-        ]);
+        setUserName(null);
+        // Clear everything to start fresh with new name
+        localStorage.removeItem('artea-user-name');
+        localStorage.removeItem('artea-grup-chat-history');
+        setHistory([{ role: 'model', content: "Siap! Kalau begitu, siapa nama kamu yang sekarang?" }]);
     }
 
     return (
@@ -304,19 +317,19 @@ const DrinkRecommender: React.FC = () => {
             </header>
 
             <div ref={chatContainerRef} className="flex-grow w-full overflow-y-auto py-4 space-y-4">
-                {/* Removed the fallback empty state message because we always initialize with a greeting now */}
                 
                 {history.map((msg, index) => (
                     <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-md lg:max-w-lg rounded-xl px-4 py-2 ${msg.role === 'user' ? 'bg-[var(--accent-color)] text-white rounded-br-none' : 'bg-stone-700/80 text-stone-200 rounded-bl-none'}`}>
+                        <div className={`max-w-md lg:max-w-lg rounded-xl px-4 py-2 shadow-sm ${msg.role === 'user' ? 'bg-[var(--accent-color)] text-white rounded-br-none' : 'bg-stone-700/80 text-stone-200 rounded-bl-none'}`}>
                             <MarkdownRenderer text={msg.content} />
                             {msg.sources && msg.sources.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-stone-600">
-                                     <h4 className="text-xs font-semibold text-stone-300 mb-1">Sumber:</h4>
+                                <div className="mt-2 pt-2 border-t border-stone-600/50">
+                                     <h4 className="text-[10px] uppercase tracking-wider font-bold text-stone-400 mb-1">Sumber:</h4>
                                      <ul className="space-y-1">
                                         {msg.sources.map((source, idx) => source.web?.uri ? (
                                             <li key={idx}>
-                                                <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-400 hover:text-sky-300 truncate block">
+                                                <a href={source.web.uri} target="_blank" rel="noopener noreferrer" className="text-xs text-sky-400 hover:text-sky-300 truncate block flex items-center">
+                                                    <i className="bi bi-link-45deg mr-1"></i>
                                                     {source.web.title || source.web.uri}
                                                 </a>
                                             </li>
@@ -339,7 +352,7 @@ const DrinkRecommender: React.FC = () => {
             </div>
 
             <div className="flex-shrink-0 pt-4 border-t border-stone-700/50">
-                 {error && <p className="text-red-400 text-center text-sm mb-2">{error}</p>}
+                 {error && <p className="text-red-400 text-center text-sm mb-2 bg-red-900/20 py-1 rounded animate-pulse">{error}</p>}
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
                     <input
                         type="text"
