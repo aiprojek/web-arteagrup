@@ -49,6 +49,11 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             try {
                 setStatus('connecting');
 
+                // 0. Fetch API Key dari server (Cloudflare Function) karena process.env tidak ada di browser saat deploy
+                const keyResponse = await fetch('/api/get-voice-key');
+                if (!keyResponse.ok) throw new Error('Gagal mengambil kredensial suara');
+                const { apiKey } = await keyResponse.json();
+
                 // 1. Inisialisasi Audio Contexts
                 const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
                 const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
@@ -60,8 +65,8 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaStreamRef.current = stream;
 
-                // 3. Setup Gemini Client
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                // 3. Setup Gemini Client menggunakan key yang didapat dari server
+                const ai = new GoogleGenAI({ apiKey });
 
                 // 4. Connect to Live API
                 // Instruksi sistem dinamis berdasarkan apakah kita sudah tahu nama user atau belum
@@ -91,7 +96,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                     - Janji Koffee (Non-Kopi): Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
 
                     ATURAN TAMBAHAN:
-                    1. KHUSUS **Janji Koffee**, user BOLEH pesan menu kustom (mix & match bahan). Jika diminta, jawab: "Bisa banget Kak! Di Janji Koffee boleh menu kustom, bilang aja ke barista ya."
+                    1. KHUSUS **Janji Koffee**, user BOLEH pesan menu kustom (mix & match bahan). Jika diminta, jawab: "Bisa banget Kak! Di Janji Koffee boleh pesan menu kustom, langsung request aja ke barista ya."
                     2. Untuk **Artea**, TIDAK ADA menu kustom.
                     3. Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
                 `;
