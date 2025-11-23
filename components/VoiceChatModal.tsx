@@ -49,7 +49,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             try {
                 setStatus('connecting');
 
-                // 0. Fetch API Key dari server (Cloudflare Function) karena process.env tidak ada di browser saat deploy
+                // 0. Fetch API Key dari server (Cloudflare Function)
                 const keyResponse = await fetch('/api/get-voice-key');
                 if (!keyResponse.ok) throw new Error('Gagal mengambil kredensial suara');
                 const { apiKey } = await keyResponse.json();
@@ -65,11 +65,10 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaStreamRef.current = stream;
 
-                // 3. Setup Gemini Client menggunakan key yang didapat dari server
+                // 3. Setup Gemini Client
                 const ai = new GoogleGenAI({ apiKey });
 
                 // 4. Connect to Live API
-                // Instruksi sistem dinamis berdasarkan apakah kita sudah tahu nama user atau belum
                 const contextualInstruction = userName 
                     ? `User ini bernama "${userName}". Sapa dia dengan hangat ("Halo Kak ${userName}! Senang bertemu lagi"), lalu langsung tawarkan bantuan seputar menu.`
                     : `Kamu BELUM tahu nama user. 
@@ -101,7 +100,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                     3. Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
                 `;
                 
-                // Konfigurasi Tools
                 const tools: Tool[] = [
                     { googleSearch: {} },
                     { functionDeclarations: [saveUserNameDeclaration] }
@@ -118,11 +116,29 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         tools: tools,
                     },
                     callbacks: {
-                        onopen: () => {
+                        onopen: async () => {
                             if (isCleanedUp) return;
                             console.log('Gemini Live Connected');
                             setStatus('connected');
                             
+                            // PENTING: Resume audio context agar tidak diblokir browser
+                            if (outputCtx.state === 'suspended') {
+                                await outputCtx.resume();
+                            }
+
+                            // FIX: Kirim pesan teks "Pancingan" agar AI menyapa duluan
+                            sessionPromise.then((session: any) => {
+                                session.send({
+                                    clientContent: {
+                                        turns: [{ 
+                                            role: 'user', 
+                                            parts: [{ text: "Halo, saya sudah terhubung. Silakan sapa saya sesuai instruksi." }] 
+                                        }],
+                                        turnComplete: true
+                                    }
+                                });
+                            });
+
                             // Mulai streaming audio input
                             const source = inputCtx.createMediaStreamSource(stream);
                             const processor = inputCtx.createScriptProcessor(4096, 1, 1);
@@ -158,24 +174,21 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         onmessage: async (msg: LiveServerMessage) => {
                             if (isCleanedUp) return;
                             
-                            // 1. Handle Function Calls (Penyimpanan Nama)
+                            // 1. Handle Function Calls
                             if (msg.toolCall) {
                                 for (const fc of msg.toolCall.functionCalls) {
                                     if (fc.name === 'saveUserName') {
                                         const nameToSave = (fc.args as any).name;
-                                        console.log('Saving name via Voice:', nameToSave);
                                         
-                                        // Simpan ke local storage & update parent state
                                         localStorage.setItem('artea-user-name', nameToSave);
                                         if (onNameSave) onNameSave(nameToSave);
 
-                                        // Kirim respon balik ke model bahwa nama sukses disimpan
                                         sessionPromise.then(session => {
                                             session.sendToolResponse({
                                                 functionResponses: [{
                                                     id: fc.id,
                                                     name: fc.name,
-                                                    response: { result: `Nama ${nameToSave} berhasil disimpan. Sekarang cari artinya, puji, dan doakan.` }
+                                                    response: { result: `Nama ${nameToSave} disimpan.` }
                                                 }]
                                             });
                                         });
@@ -183,7 +196,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 }
                             }
 
-                            // 2. Handle Audio Output
+                            // 2. Handle Audio Output (FIX PUTUS-PUTUS)
                             const base64Audio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                             if (base64Audio && outputCtx) {
                                 const audioData = base64ToUint8Array(base64Audio);
@@ -194,7 +207,18 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 bufferSource.connect(outputCtx.destination);
                                 
                                 const currentTime = outputCtx.currentTime;
-                                const startTime = Math.max(currentTime, nextStartTimeRef.current);
+                                
+                                // Logic sinkronisasi waktu yang lebih robust
+                                // Jika nextStartTime tertinggal di masa lalu (karena lag), reset ke currentTime
+                                if (nextStartTimeRef.current < currentTime) {
+                                    nextStartTimeRef.current = currentTime;
+                                }
+
+                                // Tambahkan sedikit buffer (0.05s) jika memulai stream baru untuk menghindari glitch
+                                const startTime = nextStartTimeRef.current === currentTime 
+                                    ? currentTime + 0.05 
+                                    : nextStartTimeRef.current;
+                                
                                 bufferSource.start(startTime);
                                 nextStartTimeRef.current = startTime + buffer.duration;
 
@@ -206,7 +230,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
 
                             // 3. Handle Interruption
                             if (msg.serverContent?.interrupted) {
-                                console.log('Interrupted!');
                                 sourcesRef.current.forEach(src => {
                                     try { src.stop(); } catch(e){}
                                 });
@@ -215,7 +238,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                             }
                         },
                         onclose: () => {
-                            console.log('Gemini Live Closed');
                             if (!isCleanedUp) setStatus('closed');
                         },
                         onerror: (err) => {
@@ -237,6 +259,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
 
         return () => {
             isCleanedUp = true;
+            // Cleanup standard audio nodes
             if (processorRef.current) {
                 processorRef.current.disconnect();
                 processorRef.current = null;
@@ -249,6 +272,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 mediaStreamRef.current.getTracks().forEach(track => track.stop());
                 mediaStreamRef.current = null;
             }
+            // Close contexts
             if (inputContextRef.current) {
                 inputContextRef.current.close();
                 inputContextRef.current = null;
@@ -257,19 +281,18 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 outputContextRef.current.close();
                 outputContextRef.current = null;
             }
+            // Stop playing sources
             sourcesRef.current.forEach(src => {
                 try { src.stop(); } catch(e){}
             });
             sourcesRef.current.clear();
-            // Session closed implicitly via socket drop
         };
-    }, [isOpen, userName, onNameSave]); // Dependencies updated
+    }, [isOpen, userName, onNameSave]);
 
     if (!isOpen) return null;
 
     return (
         <div className="fixed inset-0 z-[60] bg-stone-900 text-white flex flex-col items-center justify-center animate-fade-in">
-            {/* Background ambient effect */}
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1920&q=80&fit=max')] bg-cover bg-center opacity-20 blur-xl"></div>
             
             <div className="relative z-10 flex flex-col items-center w-full max-w-md p-8">
@@ -277,7 +300,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                     <div className="w-32 h-32 rounded-full border-4 border-stone-700 bg-stone-800 flex items-center justify-center mx-auto shadow-2xl relative">
                          <ArteaLogoIcon className="w-20 h-20 text-white opacity-80" />
                          
-                         {/* Status Indicator / Visualizer Ring */}
                          {status === 'connected' && (
                             <>
                                 <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-color)] opacity-50 animate-ping" style={{ animationDuration: '2s' }}></div>
