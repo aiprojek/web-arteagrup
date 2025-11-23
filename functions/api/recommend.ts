@@ -22,6 +22,9 @@ interface GeminiContent {
 
 // Handler utama untuk Cloudflare Worker.
 export const onRequestPost = async (context: { request: Request; env: Env }): Promise<Response> => {
+  // Capture original fetch to restore later
+  const originalFetch = globalThis.fetch;
+
   try {
     // 1. Dapatkan body request dari frontend dan parse sebagai JSON.
     const body: RequestBody = await context.request.json();
@@ -42,6 +45,28 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
             headers: { 'Content-Type': 'application/json' },
         });
     }
+
+    // --- FIX: Inject Referer header to satisfy API Key restrictions ---
+    // Google API Key with Referrer restrictions blocks server-side calls because they lack the Referer header.
+    // We capture the Origin from the incoming client request and manually set it for the SDK's fetch calls.
+    const origin = context.request.headers.get('Origin') || context.request.headers.get('Referer') || 'https://artea-grup.pages.dev';
+
+    const customFetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+        const newInit = init || {};
+        const headers = new Headers(newInit.headers || {});
+        
+        // Only set Referer if not already present (Origin is the most reliable for POST requests)
+        if (!headers.has('Referer')) {
+            headers.set('Referer', origin);
+        }
+        
+        newInit.headers = headers;
+        return originalFetch(input, newInit);
+    };
+
+    // Monkey-patch global fetch so the GoogleGenAI SDK uses our custom headers
+    globalThis.fetch = customFetch as any;
+    // -----------------------------------------------------------------
 
     // 3. Inisialisasi GoogleGenAI SDK di dalam worker.
     const ai = new GoogleGenAI({ apiKey });
@@ -124,5 +149,8 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     });
+  } finally {
+      // Restore original fetch
+      globalThis.fetch = originalFetch;
   }
 };

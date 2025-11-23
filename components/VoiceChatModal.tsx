@@ -49,24 +49,30 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             try {
                 setStatus('connecting');
 
-                // 1. Inisialisasi Audio Contexts
-                // FIX: Hapus { sampleRate: ... } agar menggunakan native hardware rate (misal 48000Hz).
-                // Ini mencegah error "Connecting AudioNodes from AudioContexts with different sample-rate".
+                // 1. Ambil API Key dari Server Cloudflare
+                // process.env.API_KEY tidak tersedia di browser setelah deploy
+                const keyResponse = await fetch('/api/get-voice-key');
+                if (!keyResponse.ok) {
+                    throw new Error('Gagal mengambil kredensial suara.');
+                }
+                const { apiKey } = await keyResponse.json();
+
+                // 2. Inisialisasi Audio Contexts
+                // Hapus { sampleRate: ... } agar menggunakan native hardware rate (misal 48000Hz).
                 const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
                 const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
                 
                 inputContextRef.current = inputCtx;
                 outputContextRef.current = outputCtx;
 
-                // 2. Akses Mikrofon
+                // 3. Akses Mikrofon
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaStreamRef.current = stream;
 
-                // 3. Setup Gemini Client
-                // Menggunakan process.env.API_KEY secara langsung sesuai instruksi SDK
-                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+                // 4. Setup Gemini Client dengan key yang didapat dari fetch
+                const ai = new GoogleGenAI({ apiKey: apiKey });
 
-                // 4. Connect to Live API
+                // 5. Connect to Live API
                 const contextualInstruction = userName 
                     ? `User ini bernama "${userName}". Sapa dia dengan hangat ("Halo Kak ${userName}! Senang bertemu lagi"), lalu langsung tawarkan bantuan seputar menu.`
                     : `Kamu BELUM tahu nama user. 
@@ -97,7 +103,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                     3. Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
                 `;
                 
-                // Hapus googleSearch karena sering menyebabkan putus koneksi pada mode Live
                 const tools: Tool[] = [
                     { functionDeclarations: [saveUserNameDeclaration] }
                 ];
