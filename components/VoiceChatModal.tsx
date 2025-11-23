@@ -126,19 +126,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 await outputCtx.resume();
                             }
 
-                            // FIX: Kirim pesan teks "Pancingan" agar AI menyapa duluan
-                            sessionPromise.then((session: any) => {
-                                session.send({
-                                    clientContent: {
-                                        turns: [{ 
-                                            role: 'user', 
-                                            parts: [{ text: "Halo, saya sudah terhubung. Silakan sapa saya sesuai instruksi." }] 
-                                        }],
-                                        turnComplete: true
-                                    }
-                                });
-                            });
-
                             // Mulai streaming audio input
                             const source = inputCtx.createMediaStreamSource(stream);
                             const processor = inputCtx.createScriptProcessor(4096, 1, 1);
@@ -320,7 +307,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         {status === 'closed' && 'Panggilan Berakhir'}
                     </h2>
                     <p className="text-stone-400 mt-2 text-sm">
-                        {status === 'connected' ? (userName ? `Halo, ${userName}!` : 'Silakan perkenalkan diri...') : 'Mohon tunggu sebentar'}
+                        {status === 'connected' ? (userName ? `Halo, ${userName}! (Katakan "Halo"...)` : 'Silakan katakan "Halo" untuk memulai...') : 'Mohon tunggu sebentar'}
                     </p>
                 </div>
 
