@@ -86,20 +86,19 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             setStatus('connecting');
             setErrorMessage('');
 
-            // 1. Ambil API Key dari Server Cloudflare
-            const keyResponse = await fetch('/api/get-voice-key');
-            if (!keyResponse.ok) {
-                throw new Error('Gagal mengambil kunci akses server.');
+            // 1. Validasi API Key (Client-side env)
+            // Menggunakan process.env.API_KEY langsung sesuai instruksi, menghindari fetch ke server yang bisa gagal.
+            const apiKey = process.env.API_KEY;
+            if (!apiKey) {
+                throw new Error('API Key tidak ditemukan. Pastikan konfigurasi environment benar.');
             }
-            const { apiKey } = await keyResponse.json();
 
             // 2. Inisialisasi Audio Contexts (Wajib didalam user gesture untuk Mobile)
             const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
             const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
             
-            // PENTING: Resume audio context agar tidak diblokir browser ponsel
-            await inputCtx.resume();
-            await outputCtx.resume();
+            // PENTING: Resume audio context secara paralel agar lebih cepat dan tidak diblokir browser ponsel
+            await Promise.all([inputCtx.resume(), outputCtx.resume()]);
 
             inputContextRef.current = inputCtx;
             outputContextRef.current = outputCtx;
@@ -109,7 +108,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             mediaStreamRef.current = stream;
 
             // 4. Setup Gemini Client
-            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const ai = new GoogleGenAI({ apiKey });
 
             const contextualInstruction = userName 
                 ? `User ini bernama "${userName}". Sapa dia dengan hangat ("Halo Kak ${userName}! Senang bertemu lagi"), lalu langsung tawarkan bantuan seputar menu.`
@@ -162,6 +161,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         
                         // Mulai streaming audio input
                         const source = inputCtx.createMediaStreamSource(stream);
+                        // Menggunakan buffer size 4096 untuk keseimbangan latensi dan performa
                         const processor = inputCtx.createScriptProcessor(4096, 1, 1);
                         
                         processor.onaudioprocess = (e) => {
@@ -289,7 +289,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
         } catch (err) {
             console.error("Failed to start voice session", err);
             setStatus('error');
-            setErrorMessage(err instanceof Error ? err.message : 'Gagal mengakses mikrofon atau server.');
+            setErrorMessage(err instanceof Error ? err.message : 'Gagal mengakses mikrofon atau kunci API.');
         }
     };
 
