@@ -49,14 +49,11 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             try {
                 setStatus('connecting');
 
-                // 0. Fetch API Key dari server (Cloudflare Function)
-                const keyResponse = await fetch('/api/get-voice-key');
-                if (!keyResponse.ok) throw new Error('Gagal mengambil kredensial suara');
-                const { apiKey } = await keyResponse.json();
-
                 // 1. Inisialisasi Audio Contexts
-                const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
-                const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+                // FIX: Hapus { sampleRate: ... } agar menggunakan native hardware rate (misal 48000Hz).
+                // Ini mencegah error "Connecting AudioNodes from AudioContexts with different sample-rate".
+                const inputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+                const outputCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
                 
                 inputContextRef.current = inputCtx;
                 outputContextRef.current = outputCtx;
@@ -66,7 +63,8 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 mediaStreamRef.current = stream;
 
                 // 3. Setup Gemini Client
-                const ai = new GoogleGenAI({ apiKey });
+                // Menggunakan process.env.API_KEY secara langsung sesuai instruksi SDK
+                const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
                 // 4. Connect to Live API
                 const contextualInstruction = userName 
@@ -75,10 +73,9 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                        1. Sapa user dengan ramah.
                        2. Tanyakan siapa nama mereka.
                        3. PENTING: Ketika user menyebutkan nama, KAMU WAJIB memanggil tool 'saveUserName' untuk menyimpannya.
-                       4. SETELAH nama tersimpan: Gunakan 'googleSearch' untuk mencari arti nama tersebut yang positif.
-                       5. Berikan pujian tulus tentang arti namanya.
-                       6. WAJIB: Ucapkan doa yang baik (misal: "Semoga rejekinya lancar").
-                       7. Baru setelah itu tawarkan menu.`;
+                       4. SETELAH nama tersimpan: Berikan pujian tulus tentang arti namanya (gunakan pengetahuan umum).
+                       5. WAJIB: Ucapkan doa yang baik (misal: "Semoga rejekinya lancar").
+                       6. Baru setelah itu tawarkan menu.`;
 
                 const systemInstruction = `
                     Kamu adalah "Artea AI", asisten barista suara laki-laki untuk Artea Grup.
@@ -100,8 +97,8 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                     3. Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
                 `;
                 
+                // Hapus googleSearch karena sering menyebabkan putus koneksi pada mode Live
                 const tools: Tool[] = [
-                    { googleSearch: {} },
                     { functionDeclarations: [saveUserNameDeclaration] }
                 ];
 
@@ -140,7 +137,30 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 const rms = Math.sqrt(sum / inputData.length);
                                 setVolume(Math.min(rms * 5, 1));
 
-                                const base64Data = pcmToBase64(inputData);
+                                // Downsampling Logic: Convert System Rate (e.g. 48k) -> 16k
+                                const targetRate = 16000;
+                                const currentRate = inputCtx.sampleRate;
+                                let finalData = inputData;
+
+                                if (currentRate !== targetRate) {
+                                    const ratio = currentRate / targetRate;
+                                    const newLength = Math.floor(inputData.length / ratio);
+                                    finalData = new Float32Array(newLength);
+                                    for (let i = 0; i < newLength; i++) {
+                                        // Simple downsampling with averaging to reduce aliasing
+                                        const start = Math.floor(i * ratio);
+                                        const end = Math.floor((i + 1) * ratio);
+                                        let sum = 0;
+                                        let count = 0;
+                                        for(let j = start; j < end && j < inputData.length; j++) {
+                                            sum += inputData[j];
+                                            count++;
+                                        }
+                                        finalData[i] = count > 0 ? sum / count : inputData[start];
+                                    }
+                                }
+
+                                const base64Data = pcmToBase64(finalData);
                                 
                                 sessionPromise.then(session => {
                                     session.sendRealtimeInput({
@@ -183,10 +203,12 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 }
                             }
 
-                            // 2. Handle Audio Output (FIX PUTUS-PUTUS)
+                            // 2. Handle Audio Output
                             const base64Audio = msg.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
                             if (base64Audio && outputCtx) {
                                 const audioData = base64ToUint8Array(base64Audio);
+                                // Decode 24000Hz audio from Gemini to play on System Context (e.g. 48000Hz)
+                                // pcmToAudioBuffer sets the buffer sampleRate to 24000, browser handles resampling during playback.
                                 const buffer = await pcmToAudioBuffer(audioData, outputCtx, 24000);
                                 
                                 const bufferSource = outputCtx.createBufferSource();
@@ -195,13 +217,10 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 
                                 const currentTime = outputCtx.currentTime;
                                 
-                                // Logic sinkronisasi waktu yang lebih robust
-                                // Jika nextStartTime tertinggal di masa lalu (karena lag), reset ke currentTime
                                 if (nextStartTimeRef.current < currentTime) {
                                     nextStartTimeRef.current = currentTime;
                                 }
 
-                                // Tambahkan sedikit buffer (0.05s) jika memulai stream baru untuk menghindari glitch
                                 const startTime = nextStartTimeRef.current === currentTime 
                                     ? currentTime + 0.05 
                                     : nextStartTimeRef.current;
@@ -224,8 +243,11 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                                 nextStartTimeRef.current = 0;
                             }
                         },
-                        onclose: () => {
-                            if (!isCleanedUp) setStatus('closed');
+                        onclose: (e) => {
+                            if (!isCleanedUp) {
+                                console.log('Session closed', e);
+                                setStatus('closed');
+                            }
                         },
                         onerror: (err) => {
                             console.error('Gemini Live Error:', err);
@@ -246,7 +268,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
 
         return () => {
             isCleanedUp = true;
-            // Cleanup standard audio nodes
             if (processorRef.current) {
                 processorRef.current.disconnect();
                 processorRef.current = null;
@@ -259,7 +280,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 mediaStreamRef.current.getTracks().forEach(track => track.stop());
                 mediaStreamRef.current = null;
             }
-            // Close contexts
             if (inputContextRef.current) {
                 inputContextRef.current.close();
                 inputContextRef.current = null;
@@ -268,7 +288,6 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 outputContextRef.current.close();
                 outputContextRef.current = null;
             }
-            // Stop playing sources
             sourcesRef.current.forEach(src => {
                 try { src.stop(); } catch(e){}
             });
@@ -307,12 +326,12 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         {status === 'closed' && 'Panggilan Berakhir'}
                     </h2>
                     <p className="text-stone-400 mt-2 text-sm">
-                        {status === 'connected' ? (userName ? `Halo, ${userName}! (Katakan "Halo"...)` : 'Silakan katakan "Halo" untuk memulai...') : 'Mohon tunggu sebentar'}
+                        {status === 'connected' ? (userName ? `Halo, ${userName}! (Katakan "Halo"...)` : 'Silakan katakan "Halo" untuk memulai...') : 'Mohon tunggu sebentar...'}
                     </p>
                 </div>
 
                 <div className="mt-12 flex items-center justify-center gap-8">
-                    <button className="w-14 h-14 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-400 flex items-center justify-center transition-all">
+                    <button className="w-14 h-14 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-400 flex items-center justify-center transition-all cursor-not-allowed opacity-50">
                         <i className="bi bi-mic-mute-fill text-xl"></i>
                     </button>
 
@@ -323,7 +342,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         <i className="bi bi-telephone-x-fill text-3xl"></i>
                     </button>
 
-                     <button className="w-14 h-14 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-400 flex items-center justify-center transition-all">
+                     <button className="w-14 h-14 rounded-full bg-stone-800 hover:bg-stone-700 text-stone-400 flex items-center justify-center transition-all cursor-not-allowed opacity-50">
                         <i className="bi bi-volume-up-fill text-xl"></i>
                     </button>
                 </div>
