@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import MarkdownRenderer from './MarkdownRenderer';
 import { getLocalRecommendation, getMenuForOutlet } from '../lib/LocalRecommender';
 import { ChatMessage } from '../types';
+import VoiceChatModal from './VoiceChatModal';
 
 const DrinkRecommender: React.FC = () => {
     const [history, setHistory] = useState<ChatMessage[]>([]);
@@ -10,6 +11,7 @@ const DrinkRecommender: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
     
     // New state for personalization
     const [userName, setUserName] = useState<string | null>(null);
@@ -270,49 +272,73 @@ const DrinkRecommender: React.FC = () => {
         setHistory([{ role: 'model', content: "Siap! Kalau begitu, siapa nama kamu yang sekarang?" }]);
     }
 
+    // Callback called when Voice AI captures a new name
+    const handleVoiceNameUpdate = (newName: string) => {
+        setUserName(newName);
+        setAwaitingName(false);
+        // Add a system note to chat history so the user sees what happened in voice mode
+        const noteMessage: ChatMessage = { 
+            role: 'model', 
+            content: `*(Obrolan Suara)* Salam kenal, Kak **${newName}**! Nama Kakak sudah saya simpan. 😊` 
+        };
+        setHistory(prev => [...prev, noteMessage]);
+    };
+
     return (
-        <div className="flex flex-col h-full max-h-[80vh] md:max-h-full">
+        <div className="flex flex-col h-full max-h-[80vh] md:max-h-full relative">
             <header className="flex-shrink-0 flex justify-between items-center pb-4 border-b border-stone-700/50">
                 <div className="text-left">
-                    <h2 className="text-xl md:text-2xl font-bold text-white">Asisten AI Artea Grup</h2>
-                    <p className="text-sm text-stone-400">
-                        {userName ? `Sedang melayani: ${userName}` : 'Tanya apa saja seputar menu & lokasi.'}
+                    <h2 className="text-xl md:text-2xl font-bold text-white">Asisten AI Artea</h2>
+                    <p className="text-xs md:text-sm text-stone-400 truncate max-w-[200px]">
+                        {userName ? `Halo, ${userName}!` : 'Asisten Virtual'}
                     </p>
                 </div>
-                <div className="relative" ref={menuRef}>
-                    <button
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-stone-300 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 rounded-full"
-                        aria-label="Opsi lainnya"
-                        aria-haspopup="true"
-                        aria-expanded={isMenuOpen}
+                <div className="flex items-center space-x-2">
+                     {/* Voice Call Button */}
+                     <button
+                        onClick={() => setIsVoiceModalOpen(true)}
+                        className="w-10 h-10 flex items-center justify-center text-white bg-green-600 hover:bg-green-500 rounded-full shadow-lg transition-all animate-bounce-slight"
+                        aria-label="Telepon AI"
+                        title="Ngobrol langsung dengan AI"
                     >
-                        <i className="bi bi-three-dots-vertical text-lg"></i>
+                        <i className="bi bi-telephone-fill text-sm"></i>
                     </button>
-                    {isMenuOpen && (
-                         <div className="absolute top-full right-0 mt-2 w-56 bg-stone-800/90 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden animate-fade-in-down z-10">
-                            <ul className="text-white text-sm" role="menu">
-                                <li role="menuitem">
-                                    <button
-                                        onClick={handleReset}
-                                        className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors"
-                                    >
-                                        <i className="bi bi-arrow-clockwise w-8 text-center text-base"></i>
-                                        <span>Reset Percakapan</span>
-                                    </button>
-                                </li>
-                                <li role="menuitem">
-                                    <button
-                                        onClick={handleChangeName}
-                                        className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors border-t border-white/10"
-                                    >
-                                        <i className="bi bi-person-badge w-8 text-center text-base"></i>
-                                        <span>Ganti Nama</span>
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
-                    )}
+
+                    <div className="relative" ref={menuRef}>
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-stone-300 hover:text-white transition-colors bg-stone-700/50 hover:bg-stone-700 rounded-full"
+                            aria-label="Opsi lainnya"
+                            aria-haspopup="true"
+                            aria-expanded={isMenuOpen}
+                        >
+                            <i className="bi bi-three-dots-vertical text-lg"></i>
+                        </button>
+                        {isMenuOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-56 bg-stone-800/90 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden animate-fade-in-down z-10">
+                                <ul className="text-white text-sm" role="menu">
+                                    <li role="menuitem">
+                                        <button
+                                            onClick={handleReset}
+                                            className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors"
+                                        >
+                                            <i className="bi bi-arrow-clockwise w-8 text-center text-base"></i>
+                                            <span>Reset Percakapan</span>
+                                        </button>
+                                    </li>
+                                    <li role="menuitem">
+                                        <button
+                                            onClick={handleChangeName}
+                                            className="w-full flex items-center px-4 py-3 text-left hover:bg-white/10 transition-colors border-t border-white/10"
+                                        >
+                                            <i className="bi bi-person-badge w-8 text-center text-base"></i>
+                                            <span>Ganti Nama</span>
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -374,13 +400,28 @@ const DrinkRecommender: React.FC = () => {
                     </button>
                 </form>
             </div>
+            
+            {/* Voice Chat Modal */}
+            <VoiceChatModal 
+                isOpen={isVoiceModalOpen} 
+                onClose={() => setIsVoiceModalOpen(false)}
+                userName={userName}
+                onNameSave={handleVoiceNameUpdate}
+            />
+
              <style>{`
                 .animate-pulse-fast {
                     animation: pulse 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
                 }
                 .animation-delay-200 { animation-delay: 200ms; }
                 .animation-delay-400 { animation-delay: 400ms; }
-
+                @keyframes bounce-slight {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-3px); }
+                }
+                .animate-bounce-slight {
+                    animation: bounce-slight 2s infinite;
+                }
                 @keyframes pulse {
                     50% { opacity: .5; }
                 }
