@@ -221,16 +221,7 @@ const DrinkRecommender: React.FC = () => {
             });
 
             if (!response.ok) {
-                let errorMsg = `Server merespons dengan status ${response.status}.`;
-                try {
-                    const errorData = await response.json();
-                    if (errorData.error) {
-                        errorMsg = errorData.error;
-                    }
-                } catch (jsonError) {
-                    console.error('Could not parse error JSON from server:', jsonError);
-                }
-                throw new Error(errorMsg);
+                 throw new Error(`Primary API Error: ${response.status}`);
             }
 
             const data = await response.json();
@@ -238,9 +229,48 @@ const DrinkRecommender: React.FC = () => {
             setHistory(prev => [...prev, aiMessage]);
 
         } catch (e) {
-            console.error(e);
-            const specificError = e instanceof Error ? e.message : 'Terjadi kesalahan tidak diketahui.';
-            setError(`Duh, AI kami sepertinya sedang istirahat. (${specificError})`);
+            console.warn("Primary API failed, attempting Puter.com fallback...", e);
+            
+            // 3. FALLBACK TO PUTER.COM (Browser-side)
+            try {
+                if ((window as any).puter) {
+                     const systemContext = `
+                        Kamu adalah "Artea AI", asisten barista Artea Grup.
+                        Gaya bahasa: Gaul, sopan, ramah, panggil user "Kak".
+                        
+                        MENU ARTEA (Teh/Kopi/Creamy/Mojito): Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry, Milk Tea, Green Tea, Matcha, Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino, Taro, Strawberry, Red Velvet, Mangga, Mojito Strawberry/Markisa/Mangga/Kiwi/Blue Ocean.
+                        
+                        MENU JANJI KOFFEE (Kopi/Non-Kopi): Americano, Long Black, Espresso, Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar, Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
+                        
+                        MENU KUSTOM (Hanya Janji Koffee):
+                        - Level Espresso (Soft/Normal/Strong/Bold), Jenis (Arabika/Robusta).
+                        - Gula Stevia (1-4 tetes).
+                        - Sirup (Butterscotch, Vanilla, dll).
+                        - Add-ons (Krimer, SKM, Coklat, Susu UHT).
+                        
+                        Jawab pertanyaan user seputar menu ini. Jangan halusinasi menu lain.
+                    `;
+
+                    // Construct prompt manually since Puter chat interface is simple
+                    const conversationHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Model'}: ${h.content}`).join('\n');
+                    const fullPrompt = `${systemContext}\n\nRiwayat Chat:\n${conversationHistory}\n\nUser: ${prompt}\nModel:`;
+
+                    const resp = await (window as any).puter.ai.chat(fullPrompt, { model: 'gemini-1.5-flash' });
+                    
+                    // Puter can return string or object depending on version, handle both safely
+                    const text = typeof resp === 'string' ? resp : (resp?.message?.content || JSON.stringify(resp));
+                    
+                    const aiMessage: ChatMessage = { role: 'model', content: text };
+                    setHistory(prev => [...prev, aiMessage]);
+                    setError(''); // Clear error if fallback succeeds
+                } else {
+                    throw new Error("Puter library not loaded");
+                }
+            } catch (fallbackError) {
+                console.error("Fallback failed:", fallbackError);
+                const specificError = e instanceof Error ? e.message : 'Terjadi kesalahan tidak diketahui.';
+                setError(`Maaf, server utama dan cadangan sedang sibuk. (${specificError})`);
+            }
         } finally {
             setIsLoading(false);
         }

@@ -90,10 +90,9 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
 
         **CRITICAL: PERSONALIZATION RULES**
         If the user provides their name or you are asked to find the meaning of a name:
-        1.  **SEARCH:** You MUST use Google Search to find the positive meaning of the name.
-        2.  **COMPLIMENT:** Give a sincere and warm compliment about the name.
-        3.  **PRAYER (DOA):** You MUST offer a good prayer (doa) for the user (e.g., "Semoga sehat selalu," "Semoga rejekinya lancar," "Semoga hari ini penuh berkah"). **This is mandatory.**
-        4.  **TRANSITION:** After the personal touch, gracefully transition to offering help with Artea or Janji Koffee drinks.
+        1.  **COMPLIMENT:** Give a sincere and warm compliment about the name (use your general knowledge).
+        2.  **PRAYER (DOA):** You MUST offer a good prayer (doa) for the user (e.g., "Semoga sehat selalu," "Semoga rejekinya lancar," "Semoga hari ini penuh berkah"). **This is mandatory.**
+        3.  **TRANSITION:** After the personal touch, gracefully transition to offering help with Artea or Janji Koffee drinks.
 
         **STRICT MENU RULES (NO HALLUCINATIONS ALLOWED):**
         You are only allowed to recommend items from the following list. Do NOT invent new items.
@@ -138,7 +137,7 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
       contents: contents,
       config: {
         systemInstruction: systemInstruction,
-        tools: [{ googleSearch: {} }],
+        // Removed tools: [{ googleSearch: {} }] to fix Error 400 (User location not supported)
       },
     });
 
