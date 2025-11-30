@@ -135,10 +135,17 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 - Janji Koffee (Kopi): Americano, Long Black, Espresso, Spanish Latte, Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar.
                 - Janji Koffee (Non-Kopi): Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
 
-                ATURAN TAMBAHAN:
-                1. KHUSUS **Janji Koffee**, user BOLEH pesan menu kustom (mix & match bahan). Jika diminta, jawab: "Bisa banget Kak! Di Janji Koffee boleh pesan menu kustom, langsung request aja ke barista ya."
-                2. Untuk **Artea**, TIDAK ADA menu kustom.
-                3. Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
+                ATURAN KHUSUS MENU KUSTOM (JANJI KOFFEE):
+                Di Janji Koffee, pengunjung BOLEH pesan menu kustom. Tawarkan opsi ini:
+                - **Espresso:** Arabika, Robusta, House Blend. (Level: Soft, Normal, Strong, Bold).
+                - **Gula Stevia (Sehat):** Soft (1 tetes), Normal (2 tetes), Strong (3 tetes), Bold (4 tetes).
+                - **Gula Tebu:** Soft, Normal, Strong, Bold.
+                - **Level Matcha:** Soft, Normal, Strong, Bold.
+                - **Sirup:** Butterscotch, Vanilla, Hazelnut, Tiramisu, Kappucino, Brown Sugar.
+                - **Tambahan:** Krimer, SKM, Coklat, Susu UHT.
+
+                JANGAN tawarkan menu kustom untuk Artea (hanya Janji Koffee).
+                Jawaban harus singkat (maksimal 2-3 kalimat) agar percakapan cepat.
             `;
             
             const tools: Tool[] = [

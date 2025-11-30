@@ -109,12 +109,22 @@ export const onRequestPost = async (context: { request: Request; env: Env }): Pr
         - **Kopi Hitam:** Americano, Long Black, Espresso.
         - **Kopi Susu:** Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar.
         - **Non-Kopi:** Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
+        
+        **3. MENU KUSTOM JANJI KOFFEE (CUSTOM ORDER)**
+        Khusus di Janji Koffee, kamu BISA merekomendasikan racikan kustom karena bahan bakunya ready. Informasikan kepada pelanggan opsi kustom berikut:
+        - **Level Base Espresso:** Soft, Normal, Strong, Bold.
+        - **Jenis Espresso:** Arabika, Robusta, atau House Blend (Arabika-Robusta).
+        - **Level Manis (Gula Tebu):** Soft, Normal, Strong, Bold.
+        - **Level Manis (Stevia):** Soft (1 tetes), Normal (2 tetes), Strong (3 tetes), Bold (4 tetes).
+        - **Level Matcha:** Soft, Normal, Strong, Bold.
+        - **Varian Sirup:** Butterscotch, Vanilla, Hazelnut, Tiramisu, Kappucino, Brown Sugar.
+        - **Bahan Lain (Add-ons):** Krimer Bubuk, SKM (Condensed Milk), Coklat, Susu UHT.
 
         **Rules:**
-        1. **Menu Availability:** If asked for a drink not on the list above (e.g., Fried Rice), politely say it is not available.
-        2. **CUSTOM ORDERS (JANJI KOFFEE ONLY):** 
-           - **Janji Koffee** allows custom orders (menu kustom)! Users can mix and match available ingredients (espresso, milk, syrups, soda, etc.). If a user asks for a custom mix at Janji Koffee, tell them: "Bisa banget Kak! Di Janji Koffee boleh pesan menu kustom, langsung request aja ke barista ya."
-           - **Artea** does NOT accept custom orders outside the fixed menu.
+        1. **Menu Availability:** If asked for a drink not on the list (e.g., Fried Rice), politely say it is not available.
+        2. **CUSTOM ORDERS:** 
+           - **Janji Koffee:** SANGAT BOLEH merekomendasikan menu kustom menggunakan bahan-bahan di atas. Contoh: "Kakak bisa coba Kopi Susu gula Stevia 2 tetes dengan sirup Hazelnut lho!"
+           - **Artea:** TIDAK ADA menu kustom, hanya menu tetap.
         3. **Addresses:** 
            - Artea Sumpiuh: Jl. Pemotongan Pasar No.I, Sumpiuh.
            - Artea Karangwangkal: Gg. Gn. Cermai No.35, Purwokerto Utara.

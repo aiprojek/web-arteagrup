@@ -8,12 +8,11 @@ import Modal from './components/Modal';
 import DrinkRecommender from './components/DrinkRecommender';
 import { useMediaQuery } from './hooks/useMediaQuery';
 import QRCodeModal from './components/QRCodeModal';
-import DrinkQuiz from './components/DrinkQuiz';
 import ThemesPanel, { themes } from './components/ThemesPanel';
 import { Theme } from './types';
 
 
-export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'quiz' | 'themes';
+export type Page = 'artea' | 'janji-koffee' | 'about' | 'recommender' | 'themes';
 
 const App: React.FC = () => {
     const [activePanel, setActivePanel] = useState<Page | null>(null);
@@ -53,8 +52,6 @@ const App: React.FC = () => {
                 return <AboutPage />;
             case 'recommender':
                 return <DrinkRecommender />;
-            case 'quiz':
-                return <DrinkQuiz />;
             case 'themes':
                 return <ThemesPanel 
                             currentTheme={currentTheme} 
