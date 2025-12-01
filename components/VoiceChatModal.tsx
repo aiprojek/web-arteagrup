@@ -31,6 +31,9 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
     const [status, setStatus] = useState<'initial' | 'connecting' | 'connected' | 'error' | 'closed'>('initial');
     const [volume, setVolume] = useState(0); 
     const [errorMessage, setErrorMessage] = useState('');
+    const [callDuration, setCallDuration] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
+    const [isSpeakerOn, setIsSpeakerOn] = useState(true);
 
     // Refs untuk manajemen Audio & Session
     const sessionRef = useRef<Promise<any> | null>(null);
@@ -41,16 +44,38 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
     const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
     const nextStartTimeRef = useRef<number>(0);
     const sourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+    const timerRef = useRef<any>(null);
 
     // Reset status ketika modal dibuka
     useEffect(() => {
         if (isOpen) {
             setStatus('initial');
             setErrorMessage('');
+            setCallDuration(0);
         } else {
             cleanupSession();
         }
     }, [isOpen]);
+
+    // Timer logic
+    useEffect(() => {
+        if (status === 'connected') {
+            timerRef.current = setInterval(() => {
+                setCallDuration(prev => prev + 1);
+            }, 1000);
+        } else {
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+        };
+    }, [status]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    };
 
     const cleanupSession = () => {
         if (processorRef.current) {
@@ -78,6 +103,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
         });
         sourcesRef.current.clear();
         setVolume(0);
+        if (timerRef.current) clearInterval(timerRef.current);
     };
 
     // Fungsi START yang dipanggil saat tombol diklik (User Gesture)
@@ -141,7 +167,7 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                 - **Gula Stevia (Sehat):** Soft (1 tetes), Normal (2 tetes), Strong (3 tetes), Bold (4 tetes).
                 - **Gula Tebu:** Soft, Normal, Strong, Bold.
                 - **Level Matcha:** Soft, Normal, Strong, Bold.
-                - **Sirup:** Butterscotch, Vanilla, Hazelnut, Tiramisu, Kappucino, Brown Sugar.
+                - **Varian Sirup:** Butterscotch, Vanilla, Hazelnut, Tiramisu, Kappucino, Brown Sugar.
                 - **Tambahan:** Krimer, SKM, Coklat, Susu UHT.
 
                 JANGAN tawarkan menu kustom untuk Artea (hanya Janji Koffee).
@@ -172,6 +198,8 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
                         const processor = inputCtx.createScriptProcessor(4096, 1, 1);
                         
                         processor.onaudioprocess = (e) => {
+                            if (isMuted) return; // Logic Mute Sederhana
+
                             const inputData = e.inputBuffer.getChannelData(0);
                             
                             // Visualizer logic
@@ -304,72 +332,104 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[60] bg-stone-900 text-white flex flex-col items-center justify-center animate-fade-in">
-            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1920&q=80&fit=max')] bg-cover bg-center opacity-20 blur-xl"></div>
+        <div className="fixed inset-0 z-[60] bg-stone-900 text-white flex flex-col items-center justify-between py-12 px-6 animate-fade-in font-sans">
+            {/* Background */}
+            <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1554147090-e1221a04a025?w=1920&q=80&fit=max')] bg-cover bg-center opacity-30 blur-2xl"></div>
+            <div className="absolute inset-0 bg-black/60"></div>
             
-            <div className="relative z-10 flex flex-col items-center w-full max-w-md p-8">
-                <div className="mb-8 text-center">
-                    <div className="w-32 h-32 rounded-full border-4 border-stone-700 bg-stone-800 flex items-center justify-center mx-auto shadow-2xl relative overflow-visible">
-                         <ArteaLogoIcon className="w-20 h-20 text-white opacity-80" />
+            {/* Header / Top Info */}
+            <div className="relative z-10 flex flex-col items-center w-full mt-4">
+                <button 
+                    onClick={onClose} 
+                    className="absolute left-0 top-0 p-2 text-stone-400 hover:text-white"
+                    aria-label="Minimize"
+                >
+                    <i className="bi bi-chevron-down text-2xl"></i>
+                </button>
+                <div className="text-center">
+                    <h2 className="text-2xl font-bold tracking-tight">Artea AI</h2>
+                    <p className="text-sm font-medium text-stone-300 mt-1">
+                        {status === 'initial' && 'Siap Memanggil'}
+                        {status === 'connecting' && 'Menghubungkan...'}
+                        {status === 'connected' && formatTime(callDuration)}
+                        {status === 'error' && 'Gagal'}
+                        {status === 'closed' && 'Panggilan Berakhir'}
+                    </p>
+                </div>
+            </div>
+
+            {/* Middle / Avatar */}
+            <div className="relative z-10 flex flex-col items-center justify-center flex-grow">
+                 <div className="w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-white/10 bg-stone-800 flex items-center justify-center shadow-2xl relative overflow-visible">
+                         <ArteaLogoIcon className="w-24 h-24 md:w-32 md:h-32 text-white opacity-90 z-20" />
                          
                          {status === 'connected' && (
                             <>
-                                <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-color)] opacity-50 animate-ping" style={{ animationDuration: '2s' }}></div>
+                                {/* Breathing / Pulse Effect */}
+                                <div className="absolute inset-0 rounded-full border-2 border-[var(--accent-color)] opacity-40 animate-ping-slow"></div>
                                 <div 
-                                    className="absolute inset-0 rounded-full border-4 border-[var(--accent-color)] transition-all duration-100"
+                                    className="absolute inset-0 rounded-full bg-[var(--accent-color)] blur-xl transition-all duration-100 ease-out z-10"
                                     style={{ 
-                                        transform: `scale(${1 + volume * 0.3})`,
-                                        opacity: 0.5 + volume 
+                                        opacity: Math.max(0.1, volume),
+                                        transform: `scale(${1 + volume * 0.5})` 
                                     }}
                                 ></div>
                             </>
                          )}
+                         
+                         {status === 'connecting' && (
+                              <div className="absolute inset-0 rounded-full border-t-4 border-[var(--accent-color)] animate-spin"></div>
+                         )}
                     </div>
-                    <h2 className="mt-6 text-2xl font-bold tracking-wide">
-                        {status === 'initial' && 'Mulai Percakapan'}
-                        {status === 'connecting' && 'Menghubungkan...'}
-                        {status === 'connected' && 'Artea AI (Suara)'}
-                        {status === 'error' && 'Gagal Terhubung'}
-                        {status === 'closed' && 'Selesai'}
-                    </h2>
-                    
-                    {/* Status Messages */}
-                    <div className="text-stone-400 mt-2 text-sm min-h-[40px] px-4">
-                        {status === 'initial' && 'Klik tombol hijau di bawah untuk mulai berbicara.'}
-                        {status === 'connecting' && 'Mohon tunggu sebentar, sedang menyiapkan koneksi...'}
-                        {status === 'connected' && (userName ? `Halo, ${userName}! Silakan bicara...` : 'Silakan katakan "Halo" untuk memulai...')}
-                        {status === 'error' && (
-                            <span className="text-red-400">
-                                {errorMessage || 'Pastikan izin mikrofon aktif & koneksi internet lancar.'}
-                            </span>
-                        )}
-                        {status === 'closed' && 'Terima kasih sudah mengobrol!'}
+                     {status === 'error' && (
+                        <div className="mt-8 px-4 py-2 bg-red-500/20 text-red-200 rounded-lg text-sm text-center max-w-xs backdrop-blur-sm">
+                            {errorMessage || 'Terjadi kesalahan koneksi.'}
+                        </div>
+                    )}
+            </div>
+
+            {/* Bottom / Controls */}
+            <div className="relative z-10 w-full max-w-md mb-8">
+                
+                {/* Secondary Controls (Mute/Speaker) - Only visible when connected */}
+                {status === 'connected' && (
+                    <div className="flex justify-around items-center mb-10 px-8">
+                        <button 
+                            onClick={() => setIsMuted(!isMuted)}
+                            className={`flex flex-col items-center space-y-2 transition-colors ${isMuted ? 'text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${isMuted ? 'bg-white text-stone-900' : 'bg-white/10'}`}>
+                                <i className={`bi ${isMuted ? 'bi-mic-mute-fill' : 'bi-mic-fill'}`}></i>
+                            </div>
+                            <span className="text-xs">Mute</span>
+                        </button>
+                        
+                        <button 
+                             onClick={() => setIsSpeakerOn(!isSpeakerOn)}
+                             className={`flex flex-col items-center space-y-2 transition-colors ${isSpeakerOn ? 'text-white' : 'text-stone-400 hover:text-white'}`}
+                        >
+                            <div className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl ${isSpeakerOn ? 'bg-white text-stone-900' : 'bg-white/10'}`}>
+                                <i className={`bi ${isSpeakerOn ? 'bi-volume-up-fill' : 'bi-volume-mute-fill'}`}></i>
+                            </div>
+                            <span className="text-xs">Speaker</span>
+                        </button>
                     </div>
-                </div>
+                )}
 
-                <div className="mt-8 flex items-center justify-center gap-6">
-                    {/* Back / Close Button */}
-                     <button 
-                        onClick={onClose}
-                        className="w-14 h-14 rounded-full bg-stone-700 hover:bg-stone-600 text-white shadow-lg flex items-center justify-center transition-transform hover:scale-105"
-                        aria-label="Tutup"
-                    >
-                        <i className="bi bi-x-lg text-2xl"></i>
-                    </button>
-
-                    {/* Main Action Button */}
+                {/* Primary Action Button (Call / Hangup) */}
+                <div className="flex items-center justify-center">
                     {status === 'initial' || status === 'error' || status === 'closed' ? (
                         <button 
                             onClick={handleStartSession}
-                            className="w-20 h-20 rounded-full bg-green-600 hover:bg-green-500 text-white shadow-lg shadow-green-500/30 flex items-center justify-center transform transition-transform hover:scale-110 animate-pulse-slow"
-                            aria-label="Mulai"
+                            className="w-20 h-20 rounded-full bg-green-500 hover:bg-green-400 text-white shadow-xl shadow-green-500/30 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95"
+                            aria-label="Panggil"
                         >
-                            <i className="bi bi-mic-fill text-3xl"></i>
+                            <i className="bi bi-telephone-fill text-3xl"></i>
                         </button>
                     ) : (
                         <button 
                             onClick={onClose}
-                            className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/30 flex items-center justify-center transform transition-transform hover:scale-110"
+                            className="w-20 h-20 rounded-full bg-red-500 hover:bg-red-400 text-white shadow-xl shadow-red-500/30 flex items-center justify-center transform transition-all hover:scale-105 active:scale-95"
                             aria-label="Akhiri Panggilan"
                         >
                             <i className="bi bi-telephone-x-fill text-3xl"></i>
@@ -380,18 +440,20 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
 
             <style>{`
                 @keyframes fade-in {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
                 }
                 .animate-fade-in {
-                    animation: fade-in 0.5s ease-out forwards;
+                    animation: fade-in 0.4s ease-out forwards;
                 }
-                @keyframes pulse-slow {
-                    0%, 100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
-                    50% { box-shadow: 0 0 0 15px rgba(22, 163, 74, 0); }
+                @keyframes ping-slow {
+                    75%, 100% {
+                        transform: scale(1.5);
+                        opacity: 0;
+                    }
                 }
-                .animate-pulse-slow {
-                    animation: pulse-slow 2s infinite;
+                .animate-ping-slow {
+                    animation: ping-slow 2s cubic-bezier(0, 0, 0.2, 1) infinite;
                 }
             `}</style>
         </div>
