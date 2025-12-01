@@ -72,7 +72,7 @@ const DrinkRecommender: React.FC = () => {
                 if (storedName) {
                     setHistory([{ 
                         role: 'model', 
-                        content: `Halo Kak **${storedName}**! Senang bertemu kembali. 👋\n\nAda yang bisa saya bantu seputar menu atau lokasi Artea Grup hari ini?` 
+                        content: `Halo Kak **${storedName}**! Senang bertemu kembali. 👋\n\nAda yang bisa saya bantu hari ini?` 
                     }]);
                 } else {
                     setAwaitingName(true);
@@ -168,7 +168,7 @@ const DrinkRecommender: React.FC = () => {
             Tugasmu adalah melakukan hal berikut secara berurutan dalam satu respon:
             1. Berikan pujian yang tulus dan hangat mengenai nama tersebut (gunakan pengetahuan umum).
             2. **Wajib:** Ucapkan doa yang baik untuk saya (misalnya: semoga sehat selalu, rejekinya lancar, atau dimudahkan urusannya).
-            3. Sapa saya kembali dengan nama tersebut dan tawarkan bantuan seputar menu minuman Artea atau Janji Koffee.
+            3. Sapa saya kembali dengan nama tersebut dan tawarkan bantuan apa yang bisa dibantu hari ini dengan ramah (JANGAN sebutkan daftar menu dulu).
             
             Gunakan bahasa Indonesia yang gaul tapi sopan, ramah, dan akrab layaknya barista favorit.`;
 
@@ -200,7 +200,7 @@ const DrinkRecommender: React.FC = () => {
                         TUGAS:
                         1. Puji nama user.
                         2. Doakan user (misal: sehat selalu).
-                        3. Tawarkan menu DARI DAFTAR DI ATAS. Jangan sebutkan menu yang tidak ada di daftar.
+                        3. Tawarkan bantuan secara umum (contoh: "Ada yang bisa aku bantu?"). JANGAN sebut menu spesifik dulu.
                      `;
                      const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fallbackSystem)}?model=openai`;
                      const fbResponse = await fetch(fallbackUrl);
@@ -210,7 +210,7 @@ const DrinkRecommender: React.FC = () => {
                      setHistory(prev => [...prev, { role: 'model', content: fbText }]);
                 } catch (fallbackError) {
                     // 3. Last Resort (Local Mock)
-                    const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan dan penuh berkah! Ada yang bisa saya bantu soal menu hari ini?`;
+                    const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan dan penuh berkah! Ada yang bisa saya bantu hari ini?`;
                     setHistory(prev => [...prev, { role: 'model', content: fallbackMessage }]);
                 }
             } finally {

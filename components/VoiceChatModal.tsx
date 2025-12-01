@@ -138,14 +138,14 @@ const VoiceChatModal: React.FC<VoiceChatModalProps> = ({ isOpen, onClose, userNa
             const ai = new GoogleGenAI({ apiKey: apiKey });
 
             const contextualInstruction = userName 
-                ? `User ini bernama "${userName}". Sapa dia dengan hangat ("Halo Kak ${userName}!"), lalu langsung tawarkan bantuan seputar menu.`
+                ? `User ini bernama "${userName}". Sapa dia dengan hangat ("Halo Kak ${userName}!"), lalu tawarkan bantuan apa yang bisa dibantu (jangan sebut menu spesifik dulu).`
                 : `Kamu BELUM tahu nama user. 
                    1. Sapa user dengan ramah.
                    2. Tanyakan siapa nama mereka.
                    3. PENTING: Ketika user menyebutkan nama, KAMU WAJIB memanggil tool 'saveUserName' untuk menyimpannya.
                    4. SETELAH nama tersimpan: Berikan pujian tulus tentang arti namanya.
                    5. WAJIB: Ucapkan doa yang baik (misal: "Semoga rejekinya lancar").
-                   6. Baru setelah itu tawarkan menu.`;
+                   6. Baru setelah itu tawarkan bantuan apa yang bisa dibantu (jangan sebut menu dulu).`;
 
             const systemInstruction = `
                 Kamu adalah "Artea AI", asisten barista suara laki-laki untuk Artea Grup.
