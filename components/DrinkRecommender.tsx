@@ -20,6 +20,40 @@ const DrinkRecommender: React.FC = () => {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const menuRef = useRef<HTMLDivElement>(null);
 
+    // --- SHARED DATA CONTEXT (AGAR KONSISTEN ANTARA SERVER & FALLBACK) ---
+    const MENU_DATA_CONTEXT = `
+        **CORE RULES (DO NOT BREAK):**
+        1. **STRICT MENU ADHERENCE:** You must ONLY recommend items listed in the DATABASE below. Do NOT hallucinate menus (e.g., No "Boba", No "Jus Alpukat", No "Frappuccino").
+        2. **IF MENU NOT FOUND:** Say it is not available.
+        3. **PERSONA:** Friendly, Casual (Gaul tapi Sopan), use "Kak".
+
+        **DATABASE MENU (USE THIS AS TRUTH):**
+
+        **BRAND 1: ARTEA (Teh & Minuman Segar)**
+        *Lokasi: Sumpiuh & Karangwangkal*
+        *Konsep: Fixed Recipe.*
+        
+        1. **Teh Original Series**: Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry.
+        2. **Milk Tea & Matcha**: Milk Tea, Green Tea, Green Tea Milk, Matcha.
+        3. **Creamy Series**: Taro, Strawberry, Red Velvet, Mangga.
+        4. **Kopi Series**: Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino.
+        5. **Mojito Series**: Mojito Strawberry, Mojito Markisa, Mojito Mangga, Mojito Kiwi, Mojito Blue Ocean.
+        
+        **BRAND 2: JANJI KOFFEE (Spesialis Kopi & Custom)**
+        *Lokasi: Tambak*
+        *Konsep: Custom Brew Allowed.*
+
+        1. **Kopi Hitam**: Americano, Long Black, Espresso.
+        2. **Kopi Susu & Flavor**: Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar.
+        3. **Non-Kopi**: Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
+
+        **CUSTOM FEATURES (ONLY FOR JANJI KOFFEE):**
+        - Espresso: Arabika/Robusta/House Blend. Level: Soft-Bold.
+        - Gula: Tebu / Stevia (1-4 Tetes).
+        - Sirup: Butterscotch, Vanilla, Hazelnut, dll.
+        - Add-ons: Krimer, SKM, Coklat, Susu UHT.
+    `;
+
     // Initialize Data
     useEffect(() => {
         try {
@@ -156,11 +190,17 @@ const DrinkRecommender: React.FC = () => {
             } catch (primaryError) {
                 console.warn("Primary API failed, trying fallback...", primaryError);
                 try {
-                     // 2. Fallback API (Pollinations)
+                     // 2. Fallback API (Pollinations) - NOW WITH STRICT MENU DATA
                      const fallbackSystem = `
                         Kamu adalah "Artea AI".
                         User baru bernama: ${newName}.
-                        Tugas: Puji namanya, berikan doa baik, lalu tawarkan menu Artea/Janji Koffee.
+                        
+                        ${MENU_DATA_CONTEXT}
+
+                        TUGAS:
+                        1. Puji nama user.
+                        2. Doakan user (misal: sehat selalu).
+                        3. Tawarkan menu DARI DAFTAR DI ATAS. Jangan sebutkan menu yang tidak ada di daftar.
                      `;
                      const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fallbackSystem)}?model=openai`;
                      const fbResponse = await fetch(fallbackUrl);
@@ -186,10 +226,7 @@ const DrinkRecommender: React.FC = () => {
         setHistory(newHistory);
         setCurrentMessage('');
 
-        // STRATEGY CHANGE: 
-        // We do NOT run local AI first anymore to prevent "ngawur" answers.
-        // We try the Smart APIs first. Local AI is only a catastrophe fallback.
-
+        // STRATEGY: Try Smart APIs first.
         try {
             // 1. Try Gemini API via Cloudflare
             const response = await fetch('/api/recommend', {
@@ -211,32 +248,13 @@ const DrinkRecommender: React.FC = () => {
             
             // 2. FALLBACK: Pollinations.ai (Free, Unlimited, No Login)
             try {
-                // FALLBACK SYSTEM INSTRUCTION - DIUPDATE AGAR KONSISTEN DENGAN SERVER
+                // FALLBACK SYSTEM INSTRUCTION - DIUPDATE AGAR STRICT SESUAI SERVER
                 const systemContext = `
                     Kamu adalah "Artea AI", asisten barista Artea Grup.
-                    Gaya: Gaul, sopan, ramah, panggil user "Kak".
                     
-                    ATURAN PENTING:
-                    Hanya gunakan daftar menu di bawah. Jika menu tidak ada (contoh: Boba, Jus), katakan tidak tersedia.
+                    ${MENU_DATA_CONTEXT}
                     
-                    BRAND 1: ARTEA (Fixed Recipe)
-                    - Teh: Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry.
-                    - Milk Tea: Milk Tea, Green Tea, Green Tea Milk, Matcha.
-                    - Creamy: Taro, Strawberry, Red Velvet, Mangga.
-                    - Kopi: Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino.
-                    - Mojito: Strawberry, Markisa, Mangga, Kiwi, Blue Ocean.
-
-                    BRAND 2: JANJI KOFFEE (Custom Available)
-                    - Kopi: Americano, Long Black, Espresso, Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar.
-                    - Non-Kopi: Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
-                    
-                    KHUSUS JANJI KOFFEE, user BISA request:
-                    - Espresso (Arabika/Robusta).
-                    - Gula (Tebu/Stevia).
-                    - Sirup (Butterscotch/Vanilla).
-                    - Add-ons (Krimer/SKM/Coklat/UHT).
-                    
-                    JANGAN MENGARANG MENU.
+                    JANGAN MENGARANG MENU. JIKA TIDAK ADA DI LIST, BILANG TIDAK ADA.
                 `;
 
                 // Build context prompt
