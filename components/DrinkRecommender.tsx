@@ -158,10 +158,9 @@ const DrinkRecommender: React.FC = () => {
                 try {
                      // 2. Fallback API (Pollinations)
                      const fallbackSystem = `
-                        Kamu adalah "Artea AI", asisten barista.
-                        User baru saja mengenalkan diri bernama: ${newName}.
-                        Tugas: Puji namanya, berikan doa baik (semoga sehat/lancar rejeki), lalu tawarkan menu Artea/Janji Koffee.
-                        Gaya: Ramah, Gaul, Sopan.
+                        Kamu adalah "Artea AI".
+                        User baru bernama: ${newName}.
+                        Tugas: Puji namanya, berikan doa baik, lalu tawarkan menu Artea/Janji Koffee.
                      `;
                      const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fallbackSystem)}?model=openai`;
                      const fbResponse = await fetch(fallbackUrl);
@@ -215,34 +214,34 @@ const DrinkRecommender: React.FC = () => {
                 // FALLBACK SYSTEM INSTRUCTION - DIUPDATE AGAR KONSISTEN DENGAN SERVER
                 const systemContext = `
                     Kamu adalah "Artea AI", asisten barista Artea Grup.
-                    Gaya bahasa: Gaul, sopan, ramah, panggil user "Kak".
+                    Gaya: Gaul, sopan, ramah, panggil user "Kak".
                     
-                    PENGETAHUAN MENU ARTEA GRUP (STRICT):
+                    ATURAN PENTING:
+                    Hanya gunakan daftar menu di bawah. Jika menu tidak ada (contoh: Boba, Jus), katakan tidak tersedia.
                     
-                    BRAND 1: ARTEA (Teh & Segar)
+                    BRAND 1: ARTEA (Fixed Recipe)
                     - Teh: Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry.
                     - Milk Tea: Milk Tea, Green Tea, Green Tea Milk, Matcha.
                     - Creamy: Taro, Strawberry, Red Velvet, Mangga.
                     - Kopi: Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino.
                     - Mojito: Strawberry, Markisa, Mangga, Kiwi, Blue Ocean.
-                    (Menu Artea TIDAK BISA custom).
 
-                    BRAND 2: JANJI KOFFEE (Kopi & Custom)
+                    BRAND 2: JANJI KOFFEE (Custom Available)
                     - Kopi: Americano, Long Black, Espresso, Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar.
                     - Non-Kopi: Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
                     
-                    CUSTOM ORDER (KHUSUS JANJI KOFFEE):
-                    - Espresso: Arabika/Robusta (Soft-Bold).
-                    - Gula: Tebu/Stevia (1-4 Tetes).
-                    - Sirup: Butterscotch, Vanilla, dll.
-                    - Add-ons: Krimer, SKM, Coklat, Susu UHT.
+                    KHUSUS JANJI KOFFEE, user BISA request:
+                    - Espresso (Arabika/Robusta).
+                    - Gula (Tebu/Stevia).
+                    - Sirup (Butterscotch/Vanilla).
+                    - Add-ons (Krimer/SKM/Coklat/UHT).
                     
-                    JANGAN berhalusinasi menu lain.
+                    JANGAN MENGARANG MENU.
                 `;
 
                 // Build context prompt
                 const lastTurn = history.length > 0 ? history[history.length - 1].content : '';
-                const fullPrompt = `${systemContext}\n\nUser: ${lastTurn}\nUser Input Baru: ${prompt}\nArtea AI:`;
+                const fullPrompt = `${systemContext}\n\nUser Sebelumnya: ${lastTurn}\nUser Input Sekarang: ${prompt}\nArtea AI (Jawab Singkat & Jelas):`;
                 
                 const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}?model=openai`;
                 const fbResponse = await fetch(fallbackUrl);
