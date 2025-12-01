@@ -125,8 +125,6 @@ const DrinkRecommender: React.FC = () => {
 
             // Update UI with User's name immediately
             const newUserMessage: ChatMessage = { role: 'user', content: newName };
-            // We create a temporary history for display to show the name input
-            // Note: We don't save this strictly to localStorage logic here yet because the response comes later
             const displayHistory = [...history, newUserMessage];
             setHistory(displayHistory);
             setCurrentMessage('');
@@ -134,34 +132,48 @@ const DrinkRecommender: React.FC = () => {
             // Construct a special system-directed prompt for the AI
             const specialPrompt = `Nama saya adalah "${newName}". 
             Tugasmu adalah melakukan hal berikut secara berurutan dalam satu respon:
-            1. Cari "arti nama ${newName}" yang positif dan indah menggunakan Google Search.
-            2. Berikan pujian yang tulus dan hangat mengenai nama tersebut.
-            3. **Wajib:** Ucapkan doa yang baik untuk saya (misalnya: semoga sehat selalu, rejekinya lancar, atau dimudahkan urusannya).
-            4. Sapa saya kembali dengan nama tersebut dan tawarkan bantuan seputar menu minuman Artea atau Janji Koffee.
+            1. Berikan pujian yang tulus dan hangat mengenai nama tersebut (gunakan pengetahuan umum).
+            2. **Wajib:** Ucapkan doa yang baik untuk saya (misalnya: semoga sehat selalu, rejekinya lancar, atau dimudahkan urusannya).
+            3. Sapa saya kembali dengan nama tersebut dan tawarkan bantuan seputar menu minuman Artea atau Janji Koffee.
             
             Gunakan bahasa Indonesia yang gaul tapi sopan, ramah, dan akrab layaknya barista favorit.`;
 
+            // Try Primary API -> Fallback API -> Local Mock
             try {
+                // 1. Primary API
                 const response = await fetch('/api/recommend', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // We send the special prompt, but pass the existing history so the AI knows context if any
                     body: JSON.stringify({ prompt: specialPrompt, history }), 
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Server status ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`Primary API Error: ${response.status}`);
 
                 const data = await response.json();
                 const aiMessage: ChatMessage = { role: 'model', content: data.text, sources: data.sources };
                 setHistory(prev => [...prev, aiMessage]);
 
-            } catch (e) {
-                console.error(e);
-                // Fallback if API fails
-                const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan dan penuh berkah! Ada yang bisa saya bantu soal menu hari ini?`;
-                setHistory(prev => [...prev, { role: 'model', content: fallbackMessage }]);
+            } catch (primaryError) {
+                console.warn("Primary API failed, trying fallback...", primaryError);
+                try {
+                     // 2. Fallback API (Pollinations)
+                     const fallbackSystem = `
+                        Kamu adalah "Artea AI", asisten barista.
+                        User baru saja mengenalkan diri bernama: ${newName}.
+                        Tugas: Puji namanya, berikan doa baik (semoga sehat/lancar rejeki), lalu tawarkan menu Artea/Janji Koffee.
+                        Gaya: Ramah, Gaul, Sopan.
+                     `;
+                     const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fallbackSystem)}?model=openai`;
+                     const fbResponse = await fetch(fallbackUrl);
+                     if (!fbResponse.ok) throw new Error('Fallback API Failed');
+                     const fbText = await fbResponse.text();
+                     
+                     setHistory(prev => [...prev, { role: 'model', content: fbText }]);
+                } catch (fallbackError) {
+                    // 3. Last Resort (Local Mock)
+                    const fallbackMessage = `Wah, nama yang bagus! Salam kenal ya Kak **${newName}**. Semoga hari Kakak menyenangkan dan penuh berkah! Ada yang bisa saya bantu soal menu hari ini?`;
+                    setHistory(prev => [...prev, { role: 'model', content: fallbackMessage }]);
+                }
             } finally {
                 setIsLoading(false);
             }
@@ -169,51 +181,18 @@ const DrinkRecommender: React.FC = () => {
         }
         // ----------------------------------
 
+        // Regular Chat Flow
         const newUserMessage: ChatMessage = { role: 'user', content: prompt };
         const newHistory = [...history, newUserMessage];
         setHistory(newHistory);
         setCurrentMessage('');
 
-        // 1. Try local AI first (ONLY if not setting name)
-        const availableMenu = getMenuForOutlet('semua');
-        const localResult = getLocalRecommendation(prompt, availableMenu);
-        
-        // Logic to bypass local recommendation if the prompt implies a question about the name or prayer
-        const isPersonalQuery = prompt.toLowerCase().includes('arti nama') || prompt.toLowerCase().includes('doa');
+        // STRATEGY CHANGE: 
+        // We do NOT run local AI first anymore to prevent "ngawur" answers.
+        // We try the Smart APIs first. Local AI is only a catastrophe fallback.
 
-        if (localResult && !isPersonalQuery) {
-            let content = '';
-             if (localResult.type === 'recommendation') {
-                switch (localResult.reason) {
-                    case 'Rekomendasi Hari Ini':
-                        content = `Tentu, Kak ${userName || ''}! **Rekomendasi Hari Ini** jatuh kepada... **${localResult.drink}**! Minuman ini pas banget buat nemenin harimu. Selamat mencoba!`;
-                        break;
-                    case 'Minuman Terlaris':
-                        content = `Tentu! Salah satu **Minuman Terlaris** kami adalah **${localResult.drink}**. Banyak banget yang suka, Kak ${userName || ''} wajib coba!`;
-                        break;
-                    default:
-                        if (localResult.reason.toLowerCase() === localResult.drink.toLowerCase()) {
-                            content = `Tentu, kami punya **${localResult.drink}**. Pilihan yang mantap! Kak ${userName || ''} pasti suka.`;
-                        } else {
-                           content = `Tentu! Untuk Kakak yang lagi cari minuman **${localResult.reason}**, sepertinya bakal suka banget sama **${localResult.drink}**. Cobain deh!`;
-                        }
-                }
-            } else if (localResult.type === 'definition') {
-                content = localResult.content;
-            }
-            
-            // Add slight delay for natural feel
-            setTimeout(() => {
-                const aiMessage: ChatMessage = { role: 'model', content };
-                setHistory(prev => [...prev, aiMessage]);
-                setIsLoading(false);
-            }, 600);
-            return;
-        }
-
-
-        // 2. Fallback to Gemini API via our proxy
         try {
+            // 1. Try Gemini API via Cloudflare
             const response = await fetch('/api/recommend', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -229,47 +208,62 @@ const DrinkRecommender: React.FC = () => {
             setHistory(prev => [...prev, aiMessage]);
 
         } catch (e) {
-            console.warn("Primary API failed, attempting Puter.com fallback...", e);
+            console.warn("Primary API failed, attempting Fallback...", e);
             
-            // 3. FALLBACK TO PUTER.COM (Browser-side)
+            // 2. FALLBACK: Pollinations.ai (Free, Unlimited, No Login)
             try {
-                if ((window as any).puter) {
-                     const systemContext = `
-                        Kamu adalah "Artea AI", asisten barista Artea Grup.
-                        Gaya bahasa: Gaul, sopan, ramah, panggil user "Kak".
-                        
-                        MENU ARTEA (Teh/Kopi/Creamy/Mojito): Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry, Milk Tea, Green Tea, Matcha, Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino, Taro, Strawberry, Red Velvet, Mangga, Mojito Strawberry/Markisa/Mangga/Kiwi/Blue Ocean.
-                        
-                        MENU JANJI KOFFEE (Kopi/Non-Kopi): Americano, Long Black, Espresso, Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar, Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
-                        
-                        MENU KUSTOM (Hanya Janji Koffee):
-                        - Level Espresso (Soft/Normal/Strong/Bold), Jenis (Arabika/Robusta).
-                        - Gula Stevia (1-4 tetes).
-                        - Sirup (Butterscotch, Vanilla, dll).
-                        - Add-ons (Krimer, SKM, Coklat, Susu UHT).
-                        
-                        Jawab pertanyaan user seputar menu ini. Jangan halusinasi menu lain.
-                    `;
-
-                    // Construct prompt manually since Puter chat interface is simple
-                    const conversationHistory = history.map(h => `${h.role === 'user' ? 'User' : 'Model'}: ${h.content}`).join('\n');
-                    const fullPrompt = `${systemContext}\n\nRiwayat Chat:\n${conversationHistory}\n\nUser: ${prompt}\nModel:`;
-
-                    const resp = await (window as any).puter.ai.chat(fullPrompt, { model: 'gemini-1.5-flash' });
+                const systemContext = `
+                    Kamu adalah "Artea AI", asisten barista Artea Grup.
+                    Gaya bahasa: Gaul, sopan, ramah, panggil user "Kak".
                     
-                    // Puter can return string or object depending on version, handle both safely
-                    const text = typeof resp === 'string' ? resp : (resp?.message?.content || JSON.stringify(resp));
+                    MENU ARTEA (Teh/Kopi/Creamy/Mojito): Teh Original, Teh Lemon, Teh Leci, Teh Markisa, Teh Strawberry, Milk Tea, Green Tea, Matcha, Americano, Spesial Mix, Hazelnut, Brown Sugar, Tiramisu, Vanilla, Kappucino, Taro, Strawberry, Red Velvet, Mangga, Mojito Strawberry/Markisa/Mangga/Kiwi/Blue Ocean.
                     
-                    const aiMessage: ChatMessage = { role: 'model', content: text };
-                    setHistory(prev => [...prev, aiMessage]);
-                    setError(''); // Clear error if fallback succeeds
-                } else {
-                    throw new Error("Puter library not loaded");
-                }
+                    MENU JANJI KOFFEE (Kopi/Non-Kopi): Americano, Long Black, Espresso, Spanish Latte (Best Seller), Butterscotch, Spesial Mix, Kappucino, Vanilla, Tiramisu, Hazelnut, Brown Sugar, Choco Malt, Creamy Matcha, Creamy Green Tea, Lemon Squash, Blue Ocean.
+                    
+                    MENU KUSTOM (Hanya Janji Koffee):
+                    - Level Espresso (Soft/Normal/Strong/Bold), Jenis (Arabika/Robusta).
+                    - Gula Stevia (1-4 tetes).
+                    - Sirup (Butterscotch, Vanilla, dll).
+                    - Add-ons (Krimer, SKM, Coklat, Susu UHT).
+                    
+                    Jawab pertanyaan user seputar menu ini. Jangan halusinasi menu lain.
+                `;
+
+                // Build context prompt
+                const lastTurn = history.length > 0 ? history[history.length - 1].content : '';
+                const fullPrompt = `${systemContext}\n\nUser: ${lastTurn}\nUser Input Baru: ${prompt}\nArtea AI:`;
+                
+                const fallbackUrl = `https://text.pollinations.ai/${encodeURIComponent(fullPrompt)}?model=openai`;
+                const fbResponse = await fetch(fallbackUrl);
+                
+                if(!fbResponse.ok) throw new Error("Fallback API failed");
+                
+                const fbText = await fbResponse.text();
+                const aiMessage: ChatMessage = { role: 'model', content: fbText };
+                setHistory(prev => [...prev, aiMessage]);
+                setError(''); 
+
             } catch (fallbackError) {
-                console.error("Fallback failed:", fallbackError);
-                const specificError = e instanceof Error ? e.message : 'Terjadi kesalahan tidak diketahui.';
-                setError(`Maaf, server utama dan cadangan sedang sibuk. (${specificError})`);
+                console.error("All APIs failed, using Local Dictionary:", fallbackError);
+                
+                // 3. FINAL FALLBACK: Local Dictionary
+                // This only runs if INTERNET AI is dead.
+                const availableMenu = getMenuForOutlet('semua');
+                const localResult = getLocalRecommendation(prompt, availableMenu);
+                
+                let content = '';
+                if (localResult) {
+                    if (localResult.type === 'recommendation') {
+                        content = `Maaf Kak, server lagi sibuk banget nih. Tapi kalau dari kata kuncinya, aku saranin coba **${localResult.drink}** deh!`;
+                    } else if (localResult.type === 'definition') {
+                        content = localResult.content;
+                    }
+                } else {
+                    const specificError = e instanceof Error ? e.message : 'Gangguan jaringan.';
+                    content = `Maaf Kak, sistem lagi down nih (${specificError}). Boleh coba tanya yang lain?`;
+                }
+                
+                setHistory(prev => [...prev, { role: 'model', content }]);
             }
         } finally {
             setIsLoading(false);
@@ -289,14 +283,12 @@ const DrinkRecommender: React.FC = () => {
              setHistory([{ role: 'model', content: "Halo! Boleh tau siapa nama Kakak?" }]);
              setAwaitingName(true);
         }
-        // Note: useEffect will handle saving this new history to localStorage
     }
 
     const handleChangeName = () => {
         setIsMenuOpen(false);
         setAwaitingName(true);
         setUserName(null);
-        // Clear everything to start fresh with new name
         localStorage.removeItem('artea-user-name');
         localStorage.removeItem('artea-grup-chat-history');
         setHistory([{ role: 'model', content: "Siap! Kalau begitu, siapa nama kamu yang sekarang?" }]);
